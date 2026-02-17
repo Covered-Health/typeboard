@@ -193,8 +193,7 @@ def build_resource_router(resource: Resource, render) -> APIRouter:
             fn_kwargs = {dp.name: kwargs[dp.name] for dp in _deps if dp.name in kwargs}
             fn_kwargs[_id_p or "id"] = coerced_id
             item = _res.get_fn(**fn_kwargs)
-            columns = _res.columns
-            return render("detail.html", resource=_res, request=request, id=id, item=item, columns=columns)
+            return render("detail.html", resource=_res, request=request, id=id, item=item, columns=_res.detail_fields)
 
         _inject_depends(detail_page, get_deps)
         router.add_api_route("/{id}", detail_page, methods=["GET"], response_class=HTMLResponse)

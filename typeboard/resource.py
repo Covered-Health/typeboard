@@ -22,6 +22,7 @@ class Resource:
 
     # Cached introspection results (populated lazily)
     _columns: list[FieldInfo] | None = field(default=None, repr=False)
+    _detail_fields: list[FieldInfo] | None = field(default=None, repr=False)
     _create_fields: list[FieldInfo] | None = field(default=None, repr=False)
     _update_fields: list[FieldInfo] | None = field(default=None, repr=False)
     _filter_fields: list[FieldInfo] | None = field(default=None, repr=False)
@@ -35,6 +36,13 @@ class Resource:
             fn = self.list_fn or self.get_fn
             self._columns = extract_columns(fn) if fn else []
         return self._columns
+
+    @property
+    def detail_fields(self) -> list[FieldInfo]:
+        if self._detail_fields is None:
+            fn = self.get_fn or self.list_fn
+            self._detail_fields = extract_columns(fn) if fn else []
+        return self._detail_fields
 
     @property
     def create_fields(self) -> list[FieldInfo]:
