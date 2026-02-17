@@ -14,6 +14,9 @@ class AdminField:
     filter: str | None = None
     column: bool = True
     order: int | None = None
+    is_id: bool = False
+    pagination: str | None = None  # "page" or "page_size"
+    sort: bool = False
 
 
 @dataclass

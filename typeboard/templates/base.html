@@ -6,7 +6,7 @@
     <title>{{ site.title }}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="{{ site.theme.font_url }}" rel="stylesheet">
     <script src="https://unpkg.com/htmx.org@2.0.4"></script>
     <script>
         document.addEventListener('htmx:configRequest', function(event) {
@@ -20,29 +20,29 @@
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
         :root {
-            --bg-body: #09090b;
-            --bg-sidebar: #0c0c0e;
-            --bg-card: #111113;
-            --bg-input: #18181b;
-            --bg-hover: #1c1c1f;
-            --bg-row-alt: #0e0e10;
-            --border: #27272a;
-            --border-focus: #6366f1;
-            --text-primary: #fafafa;
-            --text-secondary: #a1a1aa;
-            --text-muted: #71717a;
-            --accent: #818cf8;
-            --accent-hover: #6366f1;
-            --danger: #ef4444;
-            --danger-hover: #dc2626;
-            --success: #22c55e;
-            --radius: 8px;
-            --radius-sm: 6px;
+            --bg-body: {{ site.theme.bg_body }};
+            --bg-sidebar: {{ site.theme.bg_sidebar }};
+            --bg-card: {{ site.theme.bg_card }};
+            --bg-input: {{ site.theme.bg_input }};
+            --bg-hover: {{ site.theme.bg_hover }};
+            --bg-row-alt: {{ site.theme.bg_row_alt }};
+            --border: {{ site.theme.border }};
+            --border-focus: {{ site.theme.border_focus }};
+            --text-primary: {{ site.theme.text_primary }};
+            --text-secondary: {{ site.theme.text_secondary }};
+            --text-muted: {{ site.theme.text_muted }};
+            --accent: {{ site.theme.accent }};
+            --accent-hover: {{ site.theme.accent_hover }};
+            --accent-text: {{ site.theme.accent_text }};
+            --danger: {{ site.theme.danger }};
+            --danger-hover: {{ site.theme.danger_hover }};
+            --radius: {{ site.theme.radius }};
+            --radius-sm: {{ site.theme.radius_sm }};
             --transition: 150ms cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            font-family: {{ site.theme.font_family }};
             background: var(--bg-body);
             color: var(--text-primary);
             display: flex;
@@ -53,7 +53,7 @@
         }
 
         a { color: var(--accent); text-decoration: none; transition: color var(--transition); }
-        a:hover { color: var(--text-primary); }
+        a:hover { color: var(--accent-hover); }
 
         /* ── Sidebar ── */
         nav.sidebar {
@@ -61,7 +61,6 @@
             min-width: 240px;
             background: var(--bg-sidebar);
             border-right: 1px solid var(--border);
-            padding: 0;
             display: flex;
             flex-direction: column;
             position: sticky;
@@ -72,12 +71,22 @@
         .sidebar-header {
             padding: 20px 20px 16px;
             border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
         .sidebar-header a {
             color: var(--text-primary);
             font-weight: 600;
             font-size: 15px;
             letter-spacing: -0.01em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .sidebar-header img {
+            height: {{ site.logo_height }};
+            width: auto;
         }
         .sidebar-nav { padding: 12px 8px; flex: 1; }
         .sidebar-nav ul { list-style: none; }
@@ -98,7 +107,8 @@
         }
         .sidebar-nav a.active {
             background: var(--bg-hover);
-            color: var(--text-primary);
+            color: var(--accent);
+            font-weight: 600;
         }
         .sidebar-nav a.active::before {
             content: '';
@@ -119,7 +129,7 @@
             max-width: 1200px;
         }
 
-        /* ── Page Header / Actions ── */
+        /* ── Page Header ── */
         .page-header {
             display: flex;
             align-items: center;
@@ -142,7 +152,7 @@
             padding: 8px 16px;
             border-radius: var(--radius-sm);
             font-size: 13px;
-            font-weight: 500;
+            font-weight: 600;
             font-family: inherit;
             cursor: pointer;
             transition: all var(--transition);
@@ -152,12 +162,12 @@
         }
         .btn-primary {
             background: var(--accent);
-            color: #fff;
+            color: var(--accent-text);
             border-color: var(--accent);
         }
-        .btn-primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); color: #fff; }
+        .btn-primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); color: var(--accent-text); }
         .btn-secondary {
-            background: transparent;
+            background: var(--bg-card);
             color: var(--text-secondary);
             border-color: var(--border);
         }
@@ -171,24 +181,27 @@
         }
         .btn-danger:hover { background: var(--danger); color: #fff; border-color: var(--danger); }
         .btn-sm { padding: 4px 10px; font-size: 12px; }
-        .btn-icon { padding: 6px 8px; }
 
         /* ── Table ── */
         table {
             width: 100%;
             border-collapse: collapse;
             font-size: 13px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            overflow: hidden;
         }
         thead th {
             text-align: left;
             padding: 10px 16px;
-            font-weight: 500;
-            font-size: 12px;
+            font-weight: 600;
+            font-size: 11px;
             text-transform: uppercase;
-            letter-spacing: 0.05em;
+            letter-spacing: 0.06em;
             color: var(--text-muted);
             border-bottom: 1px solid var(--border);
-            background: var(--bg-card);
+            background: var(--bg-row-alt);
             position: sticky;
             top: 0;
             white-space: nowrap;
@@ -199,14 +212,15 @@
             border-bottom: 1px solid var(--border);
             transition: background var(--transition);
         }
+        tbody tr:last-child { border-bottom: none; }
         tbody tr:hover { background: var(--bg-hover); }
         tbody td {
             padding: 12px 16px;
             color: var(--text-secondary);
             white-space: nowrap;
         }
-        tbody td:first-child { color: var(--text-primary); }
-        tbody td a { font-weight: 500; }
+        tbody td:first-child { color: var(--text-primary); font-weight: 500; }
+        tbody td a { font-weight: 600; }
         .table-actions { display: flex; gap: 6px; align-items: center; }
 
         /* ── Filters ── */
@@ -219,8 +233,8 @@
         }
         .filter-group { display: flex; flex-direction: column; gap: 4px; }
         .filter-group label {
-            font-size: 12px;
-            font-weight: 500;
+            font-size: 11px;
+            font-weight: 600;
             color: var(--text-muted);
             text-transform: uppercase;
             letter-spacing: 0.04em;
@@ -243,15 +257,15 @@
         }
         input:focus, select:focus, textarea:focus {
             border-color: var(--border-focus);
-            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+            box-shadow: 0 0 0 3px rgba(4, 85, 191, 0.12);
         }
-        input::placeholder { color: var(--text-muted); }
+        input::placeholder, textarea::placeholder { color: var(--text-muted); }
         textarea { min-height: 100px; resize: vertical; }
         input[type="checkbox"] {
             appearance: none;
             width: 18px;
             height: 18px;
-            border: 1px solid var(--border);
+            border: 2px solid var(--border);
             border-radius: 4px;
             background: var(--bg-input);
             cursor: pointer;
@@ -269,7 +283,7 @@
             top: 2px;
             width: 5px;
             height: 9px;
-            border: solid #fff;
+            border: solid var(--accent-text);
             border-width: 0 2px 2px 0;
             transform: rotate(45deg);
         }
@@ -284,7 +298,7 @@
         }
         .form-field > span {
             font-size: 13px;
-            font-weight: 500;
+            font-weight: 600;
             color: var(--text-secondary);
         }
         .form-field .required { color: var(--danger); }
@@ -308,8 +322,8 @@
         }
         .detail-grid dt:last-of-type, .detail-grid dd:last-of-type { border-bottom: none; }
         .detail-grid dt {
-            font-size: 12px;
-            font-weight: 500;
+            font-size: 11px;
+            font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 0.04em;
             color: var(--text-muted);
@@ -331,9 +345,8 @@
             font-size: 12px;
             color: var(--text-muted);
         }
-        .pagination .btn { font-size: 12px; }
 
-        /* ── Empty / Loading states ── */
+        /* ── Empty / Loading ── */
         .empty-state {
             text-align: center;
             padding: 48px 16px;
@@ -344,25 +357,14 @@
         /* ── Errors ── */
         .field-error { color: var(--danger); font-size: 13px; }
         .error-banner {
-            background: rgba(239, 68, 68, 0.1);
-            border: 1px solid rgba(239, 68, 68, 0.25);
+            background: rgba(220, 38, 38, 0.06);
+            border: 1px solid rgba(220, 38, 38, 0.2);
             border-radius: var(--radius);
             padding: 12px 16px;
             margin-bottom: 20px;
         }
         .error-banner ul { list-style: none; }
         .error-banner li { color: var(--danger); font-size: 13px; }
-
-        /* ── HTMX indicators ── */
-        .htmx-indicator {
-            display: none;
-        }
-        .htmx-request .htmx-indicator {
-            display: inline-block;
-        }
-        .htmx-request.htmx-indicator {
-            display: inline-block;
-        }
 
         /* ── Loading bar ── */
         #loading-bar {
@@ -375,14 +377,10 @@
             z-index: 9999;
             opacity: 0;
         }
-        #loading-bar.active {
-            opacity: 1;
-        }
+        #loading-bar.active { opacity: 1; }
 
         /* ── Transitions ── */
-        .fade-in {
-            animation: fadeIn 200ms ease-out;
-        }
+        .fade-in { animation: fadeIn 200ms ease-out; }
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(4px); }
             to { opacity: 1; transform: translateY(0); }
@@ -398,7 +396,7 @@
         .breadcrumb a:hover { color: var(--text-primary); }
         .breadcrumb span { margin: 0 6px; }
 
-        /* ── Index page ── */
+        /* ── Welcome ── */
         .welcome {
             display: flex;
             flex-direction: column;
@@ -416,7 +414,6 @@
         .welcome p { font-size: 15px; }
     </style>
     <script>
-        // Loading bar for HTMX requests
         document.addEventListener('DOMContentLoaded', function() {
             var bar = document.getElementById('loading-bar');
             document.body.addEventListener('htmx:beforeRequest', function() {
@@ -437,7 +434,13 @@
     <div id="loading-bar"></div>
     <nav class="sidebar">
         <div class="sidebar-header">
-            <a href="{{ base_path }}/">{{ site.title }}</a>
+            <a href="{{ base_path }}/">
+                {% if site.logo_url %}
+                <img src="{% if site.logo_url.startswith('/') %}{{ base_path }}{{ site.logo_url }}{% else %}{{ site.logo_url }}{% endif %}" alt="{{ site.title }}">
+                {% else %}
+                {{ site.title }}
+                {% endif %}
+            </a>
         </div>
         <div class="sidebar-nav">
             <ul>

@@ -1,10 +1,12 @@
 import enum
 import inspect
+import mimetypes
 from datetime import date, datetime
+from pathlib import Path
 from typing import Any, get_args, get_origin
 
 from fastapi import APIRouter, Depends, FastAPI, Request
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
 
 from typeboard.rendering import create_renderer
 from typeboard.resource import Resource
@@ -230,6 +232,21 @@ def _coerce_id(id_str: str, fn) -> Any:
 
 def build_app(site) -> FastAPI:
     admin_app = FastAPI(title=site.title, docs_url=None, redoc_url=None)
+
+    # If logo_url is a Path, serve it as a static file and replace with the URL
+    if isinstance(site.logo_url, Path):
+        logo_path = site.logo_url.resolve()
+        media_type = (
+            mimetypes.guess_type(str(logo_path))[0]
+            or "application/octet-stream"
+        )
+
+        async def serve_logo():
+            return FileResponse(logo_path, media_type=media_type)
+
+        admin_app.add_api_route("/_static/logo{ext}", serve_logo, methods=["GET"])
+        site.logo_url = f"/_static/logo{logo_path.suffix}"
+
     render = create_renderer(site)
 
     dependencies = []

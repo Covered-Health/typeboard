@@ -100,3 +100,98 @@ def test_skips_id_for_create():
     names = [f.name for f in fields]
     assert "id" not in names
     assert "name" in names
+
+
+from fastapi import Depends
+from typeboard.introspection import (
+    extract_depends_params,
+    find_id_param,
+    find_pagination_params,
+    find_sort_param,
+)
+
+
+def fake_dep():
+    yield "fake_db"
+
+
+def fn_with_depends(
+    db: Annotated[str, Depends(fake_dep)],
+    name: str,
+) -> str:
+    ...
+
+
+def fn_with_id_convention(id: int, name: str) -> str:
+    ...
+
+
+def fn_with_id_annotation(
+    iam_org_id: Annotated[str, AdminField(is_id=True)],
+    name: str,
+) -> str:
+    ...
+
+
+def fn_with_id_fallback(
+    db: Annotated[str, Depends(fake_dep)],
+    org_id: int,
+) -> str:
+    ...
+
+
+def fn_with_pagination(
+    page: int = 1,
+    page_size: int = 25,
+    name: str | None = None,
+) -> str:
+    ...
+
+
+def fn_with_sort(sort: str | None = None) -> str:
+    ...
+
+
+def fn_with_annotated_sort(
+    order_by: Annotated[str | None, AdminField(sort=True)] = None,
+) -> str:
+    ...
+
+
+def test_extract_depends_params():
+    deps = extract_depends_params(fn_with_depends)
+    assert len(deps) == 1
+    assert deps[0].name == "db"
+
+
+def test_extract_depends_skipped_in_fields():
+    fields = extract_fields_from_function(fn_with_depends)
+    names = [f.name for f in fields]
+    assert "db" not in names
+    assert "name" in names
+
+
+def test_find_id_param_convention():
+    assert find_id_param(fn_with_id_convention) == "id"
+
+
+def test_find_id_param_annotation():
+    assert find_id_param(fn_with_id_annotation) == "iam_org_id"
+
+
+def test_find_id_param_fallback():
+    assert find_id_param(fn_with_id_fallback) == "org_id"
+
+
+def test_find_pagination_params():
+    page_param, page_size_param = find_pagination_params(fn_with_pagination)
+    assert page_param == "page"
+    assert page_size_param == "page_size"
+
+
+def test_find_sort_param_convention():
+    assert find_sort_param(fn_with_sort) == "sort"
+
+
+def test_find_sort_param_annotation():
+    assert find_sort_param(fn_with_annotated_sort) == "order_by"

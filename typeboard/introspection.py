@@ -1,6 +1,7 @@
 import inspect
 import types
-from typing import Any, get_args, get_origin, get_type_hints
+from dataclasses import dataclass
+from typing import Annotated, Any, get_args, get_origin, get_type_hints
 
 from pydantic import BaseModel
 
@@ -17,7 +18,14 @@ from typeboard.fields import (
 
 def _is_depends(annotation: Any, default: Any) -> bool:
     """Detect FastAPI Depends() parameters."""
-    return hasattr(annotation, "dependency") or hasattr(default, "dependency")
+    if hasattr(annotation, "dependency") or hasattr(default, "dependency"):
+        return True
+    # Depends() inside Annotated metadata
+    if get_origin(annotation) is Annotated:
+        for arg in get_args(annotation)[1:]:
+            if hasattr(arg, "dependency"):
+                return True
+    return False
 
 
 def _is_optional(annotation: Any) -> bool:
@@ -142,3 +150,110 @@ def extract_columns(fn) -> list[FieldInfo]:
     if isinstance(item_type, type) and issubclass(item_type, BaseModel):
         return extract_fields_from_model(item_type)
     return []
+
+
+@dataclass
+class DependsParam:
+    """A parameter that should be forwarded to FastAPI as a dependency."""
+    name: str
+    annotation: Any
+    default: Any
+
+
+def extract_depends_params(fn) -> list[DependsParam]:
+    """Extract Depends() params from a function signature."""
+    hints = get_type_hints(fn, include_extras=True)
+    sig = inspect.signature(fn)
+    result: list[DependsParam] = []
+    for param_name, param in sig.parameters.items():
+        annotation = hints.get(param_name, param.annotation)
+        default = param.default
+        if _is_depends(annotation, default):
+            result.append(DependsParam(name=param_name, annotation=annotation, default=default))
+    return result
+
+
+def find_id_param(fn) -> str | None:
+    """Find the ID parameter name. Resolution: AdminField(is_id=True) > 'id' > first non-DI param."""
+    hints = get_type_hints(fn, include_extras=True)
+    sig = inspect.signature(fn)
+
+    # Pass 1: AdminField(is_id=True)
+    for param_name, param in sig.parameters.items():
+        annotation = hints.get(param_name, param.annotation)
+        if _is_depends(annotation, param.default):
+            continue
+        admin = extract_admin_field(annotation)
+        if admin and admin.is_id:
+            return param_name
+
+    # Pass 2: named 'id'
+    for param_name, param in sig.parameters.items():
+        annotation = hints.get(param_name, param.annotation)
+        if _is_depends(annotation, param.default):
+            continue
+        if param_name == "id":
+            return param_name
+
+    # Pass 3: first non-DI param
+    for param_name, param in sig.parameters.items():
+        annotation = hints.get(param_name, param.annotation)
+        if _is_depends(annotation, param.default):
+            continue
+        return param_name
+
+    return None
+
+
+def find_pagination_params(fn) -> tuple[str | None, str | None]:
+    """Find page and page_size param names. Resolution: AdminField(pagination=...) > convention."""
+    hints = get_type_hints(fn, include_extras=True)
+    sig = inspect.signature(fn)
+    page_param = None
+    page_size_param = None
+
+    # Pass 1: AdminField annotations
+    for param_name, param in sig.parameters.items():
+        annotation = hints.get(param_name, param.annotation)
+        if _is_depends(annotation, param.default):
+            continue
+        admin = extract_admin_field(annotation)
+        if admin and admin.pagination == "page":
+            page_param = param_name
+        elif admin and admin.pagination == "page_size":
+            page_size_param = param_name
+
+    # Pass 2: convention names
+    if page_param is None and "page" in sig.parameters:
+        ann = hints.get("page", sig.parameters["page"].annotation)
+        if not _is_depends(ann, sig.parameters["page"].default):
+            page_param = "page"
+    if page_size_param is None and "page_size" in sig.parameters:
+        ann = hints.get("page_size", sig.parameters["page_size"].annotation)
+        if not _is_depends(ann, sig.parameters["page_size"].default):
+            page_size_param = "page_size"
+
+    return page_param, page_size_param
+
+
+def find_sort_param(fn) -> str | None:
+    """Find the sort param name. Resolution: AdminField(sort=True) > named 'sort'."""
+    hints = get_type_hints(fn, include_extras=True)
+    sig = inspect.signature(fn)
+
+    # Pass 1: AdminField(sort=True)
+    for param_name, param in sig.parameters.items():
+        annotation = hints.get(param_name, param.annotation)
+        if _is_depends(annotation, param.default):
+            continue
+        admin = extract_admin_field(annotation)
+        if admin and admin.sort:
+            return param_name
+
+    # Pass 2: named 'sort'
+    if "sort" in sig.parameters:
+        ann = hints.get("sort", sig.parameters["sort"].annotation)
+        if not _is_depends(ann, sig.parameters["sort"].default):
+            return "sort"
+
+    return None
