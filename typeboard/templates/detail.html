@@ -1,25 +1,39 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="actions">
-    <h1>{{ resource.name | replace("_", " ") | title }} #{{ id }}</h1>
-    {% if resource.update_fn %}
-    <a href="{{ base_path }}/{{ resource.name }}/{{ id }}/edit" role="button">Edit</a>
-    {% endif %}
-    {% if resource.list_fn %}
-    <a href="{{ base_path }}/{{ resource.name }}/" role="button" class="outline">Back to list</a>
+<div class="fade-in">
+    <div class="breadcrumb">
+        {% if resource.list_fn %}
+        <a href="{{ base_path }}/{{ resource.name }}/">{{ resource.name | replace("_", " ") | title }}</a>
+        <span>/</span>
+        {% endif %}
+        #{{ id }}
+    </div>
+
+    <div class="page-header">
+        <h1>{{ resource.name | replace("_", " ") | title }} #{{ id }}</h1>
+        <div class="actions">
+            {% if resource.update_fn %}
+            <a href="{{ base_path }}/{{ resource.name }}/{{ id }}/edit" class="btn btn-primary">Edit</a>
+            {% endif %}
+            {% if resource.list_fn %}
+            <a href="{{ base_path }}/{{ resource.name }}/" class="btn btn-secondary">Back to list</a>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if item %}
+    <div class="detail-card">
+        <dl class="detail-grid">
+            {% for col in columns %}
+            {% if not col.hidden %}
+            <dt>{{ col.label }}</dt>
+            <dd>{{ item_value(item, col.name) }}</dd>
+            {% endif %}
+            {% endfor %}
+        </dl>
+    </div>
+    {% else %}
+    <div class="empty-state">Record not found.</div>
     {% endif %}
 </div>
-
-{% if item %}
-<dl class="detail-grid">
-    {% for col in columns %}
-    {% if not col.hidden %}
-    <dt>{{ col.label }}</dt>
-    <dd>{{ item_value(item, col.name) }}</dd>
-    {% endif %}
-    {% endfor %}
-</dl>
-{% else %}
-<p>Record not found.</p>
-{% endif %}
 {% endblock %}

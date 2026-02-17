@@ -1,29 +1,43 @@
 {% extends "base.html" %}
 {% block content %}
-<h1>{% if mode == "create" %}New{% else %}Edit{% endif %} {{ resource.name | replace("_", " ") | title }}</h1>
-
-{% if errors %}
-<article aria-label="Errors">
-    <ul>
-        {% for error in errors %}
-        <li class="field-error">{{ error }}</li>
-        {% endfor %}
-    </ul>
-</article>
-{% endif %}
-
-<form method="post">
-    {% for field in fields %}
-    {% if not field.hidden %}
-    {% include "_field.html" %}
-    {% endif %}
-    {% endfor %}
-
-    <div class="actions">
-        <button type="submit">{% if mode == "create" %}Create{% else %}Save{% endif %}</button>
+<div class="fade-in">
+    <div class="breadcrumb">
         {% if resource.list_fn %}
-        <a href="{{ base_path }}/{{ resource.name }}/" role="button" class="outline">Cancel</a>
+        <a href="{{ base_path }}/{{ resource.name }}/">{{ resource.name | replace("_", " ") | title }}</a>
+        <span>/</span>
         {% endif %}
+        {% if mode == "create" %}New{% else %}Edit #{{ id }}{% endif %}
     </div>
-</form>
+
+    <div class="page-header">
+        <h1>{% if mode == "create" %}New{% else %}Edit{% endif %} {{ resource.name | replace("_", " ") | title }}</h1>
+    </div>
+
+    {% if errors %}
+    <div class="error-banner">
+        <ul>
+            {% for error in errors %}
+            <li>{{ error }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    <div class="form-container">
+        <form method="post">
+            {% for field in fields %}
+            {% if not field.hidden %}
+            {% include "_field.html" %}
+            {% endif %}
+            {% endfor %}
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">{% if mode == "create" %}Create{% else %}Save changes{% endif %}</button>
+                {% if resource.list_fn %}
+                <a href="{{ base_path }}/{{ resource.name }}/" class="btn btn-secondary">Cancel</a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+</div>
 {% endblock %}

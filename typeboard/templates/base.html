@@ -1,10 +1,12 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="light">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ site.title }}</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/htmx.org@2.0.4"></script>
     <script>
         document.addEventListener('htmx:configRequest', function(event) {
@@ -15,39 +17,441 @@
         });
     </script>
     <style>
-        body { display: flex; min-height: 100vh; margin: 0; }
-        nav.sidebar { width: 220px; padding: 1rem; background: var(--pico-card-background-color); border-right: 1px solid var(--pico-muted-border-color); }
-        nav.sidebar h2 { font-size: 1.2rem; margin-bottom: 1rem; }
-        nav.sidebar ul { list-style: none; padding: 0; }
-        nav.sidebar li { margin-bottom: 0.5rem; }
-        nav.sidebar a { text-decoration: none; }
-        nav.sidebar a.active { font-weight: bold; }
-        main { flex: 1; padding: 2rem; overflow-x: auto; }
-        .actions { display: flex; gap: 0.5rem; align-items: center; margin-bottom: 1rem; }
-        .actions > * { margin: 0; }
-        table { width: 100%; }
-        .filters { display: flex; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap; align-items: end; }
-        .filters label { margin-bottom: 0; }
-        .filters input, .filters select { margin-bottom: 0; }
-        .pagination { display: flex; gap: 0.5rem; justify-content: center; margin-top: 1rem; }
-        .field-error { color: var(--pico-del-color); font-size: 0.85rem; }
-        .detail-grid { display: grid; grid-template-columns: max-content 1fr; gap: 0.5rem 1.5rem; }
-        .detail-grid dt { font-weight: bold; }
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg-body: #09090b;
+            --bg-sidebar: #0c0c0e;
+            --bg-card: #111113;
+            --bg-input: #18181b;
+            --bg-hover: #1c1c1f;
+            --bg-row-alt: #0e0e10;
+            --border: #27272a;
+            --border-focus: #6366f1;
+            --text-primary: #fafafa;
+            --text-secondary: #a1a1aa;
+            --text-muted: #71717a;
+            --accent: #818cf8;
+            --accent-hover: #6366f1;
+            --danger: #ef4444;
+            --danger-hover: #dc2626;
+            --success: #22c55e;
+            --radius: 8px;
+            --radius-sm: 6px;
+            --transition: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-body);
+            color: var(--text-primary);
+            display: flex;
+            min-height: 100vh;
+            font-size: 14px;
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        a { color: var(--accent); text-decoration: none; transition: color var(--transition); }
+        a:hover { color: var(--text-primary); }
+
+        /* ── Sidebar ── */
+        nav.sidebar {
+            width: 240px;
+            min-width: 240px;
+            background: var(--bg-sidebar);
+            border-right: 1px solid var(--border);
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            overflow-y: auto;
+        }
+        .sidebar-header {
+            padding: 20px 20px 16px;
+            border-bottom: 1px solid var(--border);
+        }
+        .sidebar-header a {
+            color: var(--text-primary);
+            font-weight: 600;
+            font-size: 15px;
+            letter-spacing: -0.01em;
+        }
+        .sidebar-nav { padding: 12px 8px; flex: 1; }
+        .sidebar-nav ul { list-style: none; }
+        .sidebar-nav li { margin-bottom: 2px; }
+        .sidebar-nav a {
+            display: flex;
+            align-items: center;
+            padding: 8px 12px;
+            border-radius: var(--radius-sm);
+            color: var(--text-secondary);
+            font-size: 13px;
+            font-weight: 500;
+            transition: all var(--transition);
+        }
+        .sidebar-nav a:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+        }
+        .sidebar-nav a.active {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+        }
+        .sidebar-nav a.active::before {
+            content: '';
+            display: inline-block;
+            width: 3px;
+            height: 16px;
+            background: var(--accent);
+            border-radius: 2px;
+            margin-right: 8px;
+            flex-shrink: 0;
+        }
+
+        /* ── Main ── */
+        main {
+            flex: 1;
+            padding: 32px 40px;
+            overflow-x: auto;
+            max-width: 1200px;
+        }
+
+        /* ── Page Header / Actions ── */
+        .page-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 24px;
+        }
+        .page-header h1 {
+            font-size: 22px;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+            color: var(--text-primary);
+        }
+        .actions { display: flex; gap: 8px; align-items: center; }
+
+        /* ── Buttons ── */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            border-radius: var(--radius-sm);
+            font-size: 13px;
+            font-weight: 500;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all var(--transition);
+            border: 1px solid transparent;
+            text-decoration: none;
+            line-height: 1.4;
+        }
+        .btn-primary {
+            background: var(--accent);
+            color: #fff;
+            border-color: var(--accent);
+        }
+        .btn-primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); color: #fff; }
+        .btn-secondary {
+            background: transparent;
+            color: var(--text-secondary);
+            border-color: var(--border);
+        }
+        .btn-secondary:hover { background: var(--bg-hover); color: var(--text-primary); border-color: var(--text-muted); }
+        .btn-danger {
+            background: transparent;
+            color: var(--danger);
+            border-color: var(--border);
+            padding: 4px 10px;
+            font-size: 12px;
+        }
+        .btn-danger:hover { background: var(--danger); color: #fff; border-color: var(--danger); }
+        .btn-sm { padding: 4px 10px; font-size: 12px; }
+        .btn-icon { padding: 6px 8px; }
+
+        /* ── Table ── */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+        thead th {
+            text-align: left;
+            padding: 10px 16px;
+            font-weight: 500;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            border-bottom: 1px solid var(--border);
+            background: var(--bg-card);
+            position: sticky;
+            top: 0;
+            white-space: nowrap;
+        }
+        thead th a { color: var(--text-muted); }
+        thead th a:hover { color: var(--text-primary); }
+        tbody tr {
+            border-bottom: 1px solid var(--border);
+            transition: background var(--transition);
+        }
+        tbody tr:hover { background: var(--bg-hover); }
+        tbody td {
+            padding: 12px 16px;
+            color: var(--text-secondary);
+            white-space: nowrap;
+        }
+        tbody td:first-child { color: var(--text-primary); }
+        tbody td a { font-weight: 500; }
+        .table-actions { display: flex; gap: 6px; align-items: center; }
+
+        /* ── Filters ── */
+        .filters {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+            align-items: flex-end;
+            flex-wrap: wrap;
+        }
+        .filter-group { display: flex; flex-direction: column; gap: 4px; }
+        .filter-group label {
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        /* ── Form Inputs ── */
+        input[type="text"], input[type="search"], input[type="number"],
+        input[type="date"], input[type="datetime-local"], input[type="email"],
+        input[type="password"], select, textarea {
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            color: var(--text-primary);
+            padding: 8px 12px;
+            font-size: 13px;
+            font-family: inherit;
+            transition: all var(--transition);
+            outline: none;
+            width: 100%;
+        }
+        input:focus, select:focus, textarea:focus {
+            border-color: var(--border-focus);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+        }
+        input::placeholder { color: var(--text-muted); }
+        textarea { min-height: 100px; resize: vertical; }
+        input[type="checkbox"] {
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            background: var(--bg-input);
+            cursor: pointer;
+            position: relative;
+            transition: all var(--transition);
+        }
+        input[type="checkbox"]:checked {
+            background: var(--accent);
+            border-color: var(--accent);
+        }
+        input[type="checkbox"]:checked::after {
+            content: '';
+            position: absolute;
+            left: 5px;
+            top: 2px;
+            width: 5px;
+            height: 9px;
+            border: solid #fff;
+            border-width: 0 2px 2px 0;
+            transform: rotate(45deg);
+        }
+
+        /* ── Form Layout ── */
+        .form-container { max-width: 560px; }
+        .form-field {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-bottom: 20px;
+        }
+        .form-field > span {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+        .form-field .required { color: var(--danger); }
+        .form-actions { display: flex; gap: 8px; margin-top: 28px; }
+
+        /* ── Detail View ── */
+        .detail-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 24px;
+        }
+        .detail-grid {
+            display: grid;
+            grid-template-columns: 140px 1fr;
+            gap: 0;
+        }
+        .detail-grid dt, .detail-grid dd {
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border);
+        }
+        .detail-grid dt:last-of-type, .detail-grid dd:last-of-type { border-bottom: none; }
+        .detail-grid dt {
+            font-size: 12px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: var(--text-muted);
+        }
+        .detail-grid dd {
+            color: var(--text-primary);
+            font-weight: 400;
+        }
+
+        /* ── Pagination ── */
+        .pagination {
+            display: flex;
+            gap: 8px;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 0 4px;
+        }
+        .pagination span {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+        .pagination .btn { font-size: 12px; }
+
+        /* ── Empty / Loading states ── */
+        .empty-state {
+            text-align: center;
+            padding: 48px 16px;
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+
+        /* ── Errors ── */
+        .field-error { color: var(--danger); font-size: 13px; }
+        .error-banner {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.25);
+            border-radius: var(--radius);
+            padding: 12px 16px;
+            margin-bottom: 20px;
+        }
+        .error-banner ul { list-style: none; }
+        .error-banner li { color: var(--danger); font-size: 13px; }
+
+        /* ── HTMX indicators ── */
+        .htmx-indicator {
+            display: none;
+        }
+        .htmx-request .htmx-indicator {
+            display: inline-block;
+        }
+        .htmx-request.htmx-indicator {
+            display: inline-block;
+        }
+
+        /* ── Loading bar ── */
+        #loading-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 2px;
+            background: var(--accent);
+            transition: width 200ms ease;
+            z-index: 9999;
+            opacity: 0;
+        }
+        #loading-bar.active {
+            opacity: 1;
+        }
+
+        /* ── Transitions ── */
+        .fade-in {
+            animation: fadeIn 200ms ease-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ── Breadcrumb ── */
+        .breadcrumb {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+        }
+        .breadcrumb a { color: var(--text-muted); }
+        .breadcrumb a:hover { color: var(--text-primary); }
+        .breadcrumb span { margin: 0 6px; }
+
+        /* ── Index page ── */
+        .welcome {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 60vh;
+            color: var(--text-muted);
+        }
+        .welcome h1 {
+            font-size: 28px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+        .welcome p { font-size: 15px; }
     </style>
+    <script>
+        // Loading bar for HTMX requests
+        document.addEventListener('DOMContentLoaded', function() {
+            var bar = document.getElementById('loading-bar');
+            document.body.addEventListener('htmx:beforeRequest', function() {
+                bar.style.width = '40%';
+                bar.classList.add('active');
+            });
+            document.body.addEventListener('htmx:afterRequest', function() {
+                bar.style.width = '100%';
+                setTimeout(function() {
+                    bar.classList.remove('active');
+                    bar.style.width = '0%';
+                }, 200);
+            });
+        });
+    </script>
 </head>
 <body>
+    <div id="loading-bar"></div>
     <nav class="sidebar">
-        <h2><a href="{{ base_path }}/">{{ site.title }}</a></h2>
-        <ul>
-            {% for name, res in site.resources.items() %}
-            <li>
-                <a href="{{ base_path }}/{{ name }}/"
-                   {% if resource is defined and resource.name == name %}class="active"{% endif %}>
-                    {{ name | replace("_", " ") | title }}
-                </a>
-            </li>
-            {% endfor %}
-        </ul>
+        <div class="sidebar-header">
+            <a href="{{ base_path }}/">{{ site.title }}</a>
+        </div>
+        <div class="sidebar-nav">
+            <ul>
+                {% for name, res in site.resources.items() %}
+                <li>
+                    <a href="{{ base_path }}/{{ name }}/"
+                       {% if resource is defined and resource.name == name %}class="active"{% endif %}>
+                        {% if resource is defined and resource.name == name %}{% else %}<span style="width:11px;display:inline-block;"></span>{% endif %}
+                        {{ name | replace("_", " ") | title }}
+                    </a>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
     </nav>
     <main>
         {% block content %}{% endblock %}

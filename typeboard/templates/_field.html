@@ -1,14 +1,15 @@
-<label>
-    {{ field.label }}{% if field.required %} *{% endif %}
+<div class="form-field">
+    <span>{{ field.label }}{% if field.required %} <span class="required">*</span>{% endif %}</span>
     {% if field.widget == "textarea" %}
-    <textarea name="{{ field.name }}" {% if field.read_only %}disabled{% endif %}>{{ values.get(field.name, field.default or '') }}</textarea>
+    <textarea name="{{ field.name }}" {% if field.read_only %}disabled{% endif %} placeholder="Enter {{ field.label | lower }}...">{{ values.get(field.name, field.default or '') }}</textarea>
     {% elif field.widget == "checkbox" %}
-    <input type="checkbox" name="{{ field.name }}" role="switch"
+    <input type="checkbox" name="{{ field.name }}"
            {% if values.get(field.name, field.default) %}checked{% endif %}
            {% if field.read_only %}disabled{% endif %}>
     {% elif field.widget == "number" %}
     <input type="number" name="{{ field.name }}" value="{{ values.get(field.name, field.default or '') }}"
-           {% if field.read_only %}disabled{% endif %} {% if field.required %}required{% endif %}>
+           {% if field.read_only %}disabled{% endif %} {% if field.required %}required{% endif %}
+           placeholder="0">
     {% elif field.widget == "date" %}
     <input type="date" name="{{ field.name }}" value="{{ values.get(field.name, field.default or '') }}"
            {% if field.read_only %}disabled{% endif %} {% if field.required %}required{% endif %}>
@@ -17,7 +18,7 @@
            {% if field.read_only %}disabled{% endif %} {% if field.required %}required{% endif %}>
     {% elif field.widget == "select" %}
     <select name="{{ field.name }}" {% if field.read_only %}disabled{% endif %} {% if field.required %}required{% endif %}>
-        {% if not field.required %}<option value="">---</option>{% endif %}
+        {% if not field.required %}<option value="">Select...</option>{% endif %}
         {% if field.enum_choices %}
         {% for value, label in field.enum_choices %}
         <option value="{{ value }}" {% if values.get(field.name) == value %}selected{% endif %}>{{ label }}</option>
@@ -26,6 +27,7 @@
     </select>
     {% else %}
     <input type="text" name="{{ field.name }}" value="{{ values.get(field.name, field.default or '') }}"
-           {% if field.read_only %}disabled{% endif %} {% if field.required %}required{% endif %}>
+           {% if field.read_only %}disabled{% endif %} {% if field.required %}required{% endif %}
+           placeholder="Enter {{ field.label | lower }}...">
     {% endif %}
-</label>
+</div>

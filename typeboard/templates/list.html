@@ -1,59 +1,63 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="actions">
-    <h1>{{ resource.name | replace("_", " ") | title }}</h1>
-    {% if resource.create_fn %}
-    <a href="{{ base_path }}/{{ resource.name }}/new" role="button">New</a>
+<div class="fade-in">
+    <div class="page-header">
+        <h1>{{ resource.name | replace("_", " ") | title }}</h1>
+        <div class="actions">
+            {% if resource.create_fn %}
+            <a href="{{ base_path }}/{{ resource.name }}/new" class="btn btn-primary">+ New</a>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if resource.filter_fields %}
+    <form class="filters" hx-get="{{ base_path }}/{{ resource.name }}/rows" hx-target="#table-body" hx-trigger="submit" hx-swap="innerHTML">
+        {% for field in resource.filter_fields %}
+        <div class="filter-group">
+            <label>{{ field.label }}</label>
+            {% if field.filter == "search" %}
+            <input type="search" name="{{ field.name }}" placeholder="Search...">
+            {% elif field.filter == "select" %}
+            <select name="{{ field.name }}">
+                <option value="">All</option>
+                {% if field.enum_choices %}
+                {% for value, label in field.enum_choices %}
+                <option value="{{ value }}">{{ label }}</option>
+                {% endfor %}
+                {% endif %}
+            </select>
+            {% else %}
+            <input type="text" name="{{ field.name }}">
+            {% endif %}
+        </div>
+        {% endfor %}
+        <button type="submit" class="btn btn-secondary" style="margin-bottom:1px;">Filter</button>
+    </form>
     {% endif %}
+
+    <table>
+        <thead>
+            <tr>
+                {% for col in resource.columns %}
+                {% if col.column and not col.hidden %}
+                <th>
+                    <a hx-get="{{ base_path }}/{{ resource.name }}/rows?sort={{ col.name }}" hx-target="#table-body" hx-swap="innerHTML">
+                        {{ col.label }}
+                    </a>
+                </th>
+                {% endif %}
+                {% endfor %}
+                {% if resource.update_fn or resource.delete_fn %}
+                <th style="text-align:right;">Actions</th>
+                {% endif %}
+            </tr>
+        </thead>
+        <tbody id="table-body"
+               hx-get="{{ base_path }}/{{ resource.name }}/rows"
+               hx-trigger="load"
+               hx-swap="innerHTML">
+            <tr><td colspan="100" class="empty-state">Loading...</td></tr>
+        </tbody>
+    </table>
 </div>
-
-{% if resource.filter_fields %}
-<form class="filters" hx-get="{{ base_path }}/{{ resource.name }}/rows" hx-target="#table-body" hx-trigger="submit" hx-swap="innerHTML">
-    {% for field in resource.filter_fields %}
-    <label>
-        {{ field.label }}
-        {% if field.filter == "search" %}
-        <input type="search" name="{{ field.name }}" placeholder="Search...">
-        {% elif field.filter == "select" %}
-        <select name="{{ field.name }}">
-            <option value="">All</option>
-            {% if field.enum_choices %}
-            {% for value, label in field.enum_choices %}
-            <option value="{{ value }}">{{ label }}</option>
-            {% endfor %}
-            {% endif %}
-        </select>
-        {% else %}
-        <input type="text" name="{{ field.name }}">
-        {% endif %}
-    </label>
-    {% endfor %}
-    <button type="submit">Filter</button>
-</form>
-{% endif %}
-
-<table>
-    <thead>
-        <tr>
-            {% for col in resource.columns %}
-            {% if col.column and not col.hidden %}
-            <th>
-                <a hx-get="{{ base_path }}/{{ resource.name }}/rows?sort={{ col.name }}" hx-target="#table-body" hx-swap="innerHTML" style="cursor:pointer; text-decoration:none; color:inherit;">
-                    {{ col.label }}
-                </a>
-            </th>
-            {% endif %}
-            {% endfor %}
-            {% if resource.update_fn or resource.delete_fn %}
-            <th>Actions</th>
-            {% endif %}
-        </tr>
-    </thead>
-    <tbody id="table-body"
-           hx-get="{{ base_path }}/{{ resource.name }}/rows"
-           hx-trigger="load"
-           hx-swap="innerHTML">
-        <tr><td colspan="100">Loading...</td></tr>
-    </tbody>
-</table>
 {% endblock %}
