@@ -8,9 +8,10 @@ from typing import Any, get_args, get_origin
 from fastapi import APIRouter, Depends, FastAPI, Request
 from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
 
-from typeboard.fields import unwrap_annotated
+from typeboard.fields import FieldInfo, unwrap_annotated
 from typeboard.introspection import (
     DependsParam,
+    extract_depends_params,
     find_pagination_params,
     find_sort_param,
 )
@@ -28,6 +29,14 @@ def _coerce(value: Any, python_type: type) -> Any:
         non_none = [a for a in args if a is not type(None)]
         if non_none:
             python_type = non_none[0]
+
+    if origin is list:
+        inner_type = args[0] if args else str
+        if isinstance(value, list):
+            return [_coerce(v, inner_type) for v in value]
+        if value is None or value == "":
+            return []
+        return [_coerce(value, inner_type)]
 
     if value is None or value == "":
         return None
@@ -81,6 +90,28 @@ def _inject_depends(handler, depends_params: list[DependsParam]):
 
     handler.__signature__ = sig.replace(parameters=filtered)
     return handler
+
+
+def _resolve_choices(fields: list[FieldInfo], di_kwargs: dict[str, Any]) -> None:
+    """Call choices callables to populate enum_choices for multiselect fields."""
+    for f in fields:
+        if f.choices_callable:
+            sig = inspect.signature(f.choices_callable)
+            call_kwargs = {k: v for k, v in di_kwargs.items() if k in sig.parameters}
+            f.enum_choices = f.choices_callable(**call_kwargs)
+
+
+def _collect_choices_deps(fields: list[FieldInfo]) -> list[DependsParam]:
+    """Extract DI params needed by choices callables."""
+    seen: set[str] = set()
+    result: list[DependsParam] = []
+    for f in fields:
+        if f.choices_callable:
+            for dp in extract_depends_params(f.choices_callable):
+                if dp.name not in seen:
+                    seen.add(dp.name)
+                    result.append(dp)
+    return result
 
 
 def build_resource_router(resource: Resource, render) -> APIRouter:
@@ -170,9 +201,19 @@ def build_resource_router(resource: Resource, render) -> APIRouter:
 
     if resource.create_fn:
         create_deps = resource.get_depends_params("create")
+        create_form_choices_deps = _collect_choices_deps(resource.create_fields)
+        # Merge create deps + choices deps (deduped)
+        create_form_deps = list(create_deps)
+        seen_dep_names = {dp.name for dp in create_form_deps}
+        for dp in create_form_choices_deps:
+            if dp.name not in seen_dep_names:
+                create_form_deps.append(dp)
+                seen_dep_names.add(dp.name)
 
-        async def create_form(request: Request, _res=resource):
+        async def create_form(request: Request, _res=resource, _deps=create_form_deps, **kwargs):
             fields = _res.create_fields
+            di_kwargs = {dp.name: kwargs[dp.name] for dp in _deps if dp.name in kwargs}
+            _resolve_choices(fields, di_kwargs)
             return render("form.html", resource=_res, request=request, mode="create", fields=fields, values={}, errors=[])
 
         async def create_submit(request: Request, _res=resource, _deps=create_deps, **kwargs):
@@ -182,6 +223,10 @@ def build_resource_router(resource: Resource, render) -> APIRouter:
             values = {}
             for field in fields:
                 if field.hidden or field.read_only:
+                    continue
+                if field.widget == "multiselect":
+                    raw = form_data.getlist(field.name)
+                    values[field.name] = _coerce(raw, field.python_type) if raw else []
                     continue
                 raw = form_data.get(field.name)
                 if raw is None or raw == "":
@@ -223,21 +268,32 @@ def build_resource_router(resource: Resource, render) -> APIRouter:
                 status_code=303,
             )
 
+        _inject_depends(create_form, create_form_deps)
         _inject_depends(create_submit, create_deps)
         router.add_api_route("/new", create_form, methods=["GET"], response_class=HTMLResponse)
         router.add_api_route("/new", create_submit, methods=["POST"])
 
     if resource.update_fn:
         update_deps = resource.get_depends_params("update")
-        # edit_form needs get_fn deps to load the current item
-        edit_form_deps = resource.get_depends_params("get") if resource.get_fn else []
+        # edit_form needs get_fn deps + choices deps
+        edit_get_deps = resource.get_depends_params("get") if resource.get_fn else []
+        edit_choices_deps = _collect_choices_deps(resource.update_fields)
+        # Merge get deps + choices deps (deduped)
+        edit_form_deps = list(edit_get_deps)
+        seen_edit_dep_names = {dp.name for dp in edit_form_deps}
+        for dp in edit_choices_deps:
+            if dp.name not in seen_edit_dep_names:
+                edit_form_deps.append(dp)
+                seen_edit_dep_names.add(dp.name)
 
-        async def edit_form(request: Request, id: str, _res=resource, _deps=edit_form_deps, _id_p=id_param, **kwargs):
-            fn_kwargs = {dp.name: kwargs[dp.name] for dp in _deps if dp.name in kwargs}
+        async def edit_form(request: Request, id: str, _res=resource, _deps=edit_form_deps, _get_deps=edit_get_deps, _id_p=id_param, **kwargs):
+            fn_kwargs = {dp.name: kwargs[dp.name] for dp in _get_deps if dp.name in kwargs}
             coerced_id = _coerce_id(id, _res.get_fn, _id_p) if _res.get_fn else int(id)
             fn_kwargs[_id_p or "id"] = coerced_id
             item = _res.get_fn(**fn_kwargs) if _res.get_fn else None
             fields = _res.update_fields
+            di_kwargs = {dp.name: kwargs[dp.name] for dp in _deps if dp.name in kwargs}
+            _resolve_choices(fields, di_kwargs)
             values = {}
             if item:
                 for f in fields:
@@ -256,6 +312,10 @@ def build_resource_router(resource: Resource, render) -> APIRouter:
             values = {}
             for field in fields:
                 if field.hidden or field.read_only:
+                    continue
+                if field.widget == "multiselect":
+                    raw = form_data.getlist(field.name)
+                    values[field.name] = _coerce(raw, field.python_type) if raw else []
                     continue
                 raw = form_data.get(field.name)
                 if raw is None or raw == "":
