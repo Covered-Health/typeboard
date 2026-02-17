@@ -1,4 +1,5 @@
 import enum
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import date, datetime
 from typing import Annotated, Any, get_args, get_origin
@@ -17,6 +18,7 @@ class AdminField:
     is_id: bool = False
     pagination: str | None = None  # "page" or "page_size"
     sort: bool = False
+    choices: Callable | None = None
 
 
 @dataclass
@@ -34,6 +36,7 @@ class FieldInfo:
     column: bool = True
     order: int | None = None
     enum_choices: list[tuple[str, str]] | None = None
+    choices_callable: Callable | None = None
 
 
 def _unwrap_optional(python_type: type) -> type:

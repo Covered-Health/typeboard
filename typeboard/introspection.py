@@ -69,6 +69,7 @@ def _build_field_info(
         column=admin.column if admin else True,
         order=admin.order if admin else None,
         enum_choices=get_enum_choices(base_type),
+        choices_callable=admin.choices if admin else None,
     )
 
 

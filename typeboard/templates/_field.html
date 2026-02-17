@@ -16,6 +16,15 @@
     {% elif field.widget == "datetime" %}
     <input type="datetime-local" name="{{ field.name }}" value="{{ values.get(field.name, field.default or '') }}"
            {% if field.read_only %}disabled{% endif %} {% if field.required %}required{% endif %}>
+    {% elif field.widget == "multiselect" %}
+    {% set current = values.get(field.name, []) | map('string') | list %}
+    <select name="{{ field.name }}" multiple {% if field.read_only %}disabled{% endif %} size="8">
+        {% if field.enum_choices %}
+        {% for value, label in field.enum_choices %}
+        <option value="{{ value }}" {% if value|string in current %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+        {% endif %}
+    </select>
     {% elif field.widget == "select" %}
     <select name="{{ field.name }}" {% if field.read_only %}disabled{% endif %} {% if field.required %}required{% endif %}>
         {% if not field.required %}<option value="">Select...</option>{% endif %}
