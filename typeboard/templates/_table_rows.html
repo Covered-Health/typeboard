@@ -16,14 +16,20 @@
     <td style="text-align:right;">
         <div class="table-actions" style="justify-content:flex-end;">
             {% if resource.update_fn %}
-            <a href="{{ base_path }}/{{ resource.name }}/{{ item_id(item) }}/edit" class="btn btn-secondary btn-sm">Edit</a>
+            <wa-button size="small" appearance="outlined" href="{{ base_path }}/{{ resource.name }}/{{ item_id(item) }}/edit">
+                <wa-icon slot="start" name="pen"></wa-icon>
+                Edit
+            </wa-button>
             {% endif %}
             {% if resource.delete_fn %}
-            <button class="btn btn-danger btn-sm"
+            <wa-button size="small" variant="danger" appearance="outlined"
                     hx-delete="{{ base_path }}/{{ resource.name }}/{{ item_id(item) }}"
                     hx-confirm="Are you sure you want to delete this record?"
                     hx-target="closest tr"
-                    hx-swap="outerHTML">Delete</button>
+                    hx-swap="outerHTML">
+                <wa-icon slot="start" name="trash"></wa-icon>
+                Delete
+            </wa-button>
             {% endif %}
         </div>
     </td>
@@ -40,19 +46,25 @@
         <div class="pagination">
             <div>
                 {% if page_info.has_prev %}
-                <a class="btn btn-secondary btn-sm"
+                <wa-button size="small" appearance="outlined"
                    hx-get="{{ base_path }}/{{ resource.name }}/rows?page={{ page_info.page - 1 }}"
                    hx-target="#table-body"
-                   hx-swap="innerHTML">&larr; Previous</a>
+                   hx-swap="innerHTML">
+                    <wa-icon slot="start" name="chevron-left"></wa-icon>
+                    Previous
+                </wa-button>
                 {% endif %}
             </div>
             <span>Page {{ page_info.page }} of {{ page_info.total_pages }} &middot; {{ page_info.total }} records</span>
             <div>
                 {% if page_info.has_next %}
-                <a class="btn btn-secondary btn-sm"
+                <wa-button size="small" appearance="outlined"
                    hx-get="{{ base_path }}/{{ resource.name }}/rows?page={{ page_info.page + 1 }}"
                    hx-target="#table-body"
-                   hx-swap="innerHTML">Next &rarr;</a>
+                   hx-swap="innerHTML">
+                    Next
+                    <wa-icon slot="end" name="chevron-right"></wa-icon>
+                </wa-button>
                 {% endif %}
             </div>
         </div>

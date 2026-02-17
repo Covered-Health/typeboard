@@ -1,43 +1,45 @@
 {% extends "base.html" %}
 {% block content %}
 <div class="fade-in">
-    <div class="breadcrumb">
+    <wa-breadcrumb>
         {% if resource.list_fn %}
-        <a href="{{ base_path }}/{{ resource.name }}/">{{ resource.name | replace("_", " ") | title }}</a>
-        <span>/</span>
+        <wa-breadcrumb-item href="{{ base_path }}/{{ resource.name }}/">{{ resource.name | replace("_", " ") | title }}</wa-breadcrumb-item>
         {% endif %}
-        {% if mode == "create" %}New{% else %}Edit #{{ id }}{% endif %}
-    </div>
+        <wa-breadcrumb-item>{% if mode == "create" %}New{% else %}Edit #{{ id }}{% endif %}</wa-breadcrumb-item>
+    </wa-breadcrumb>
 
     <div class="page-header">
         <h1>{% if mode == "create" %}New{% else %}Edit{% endif %} {{ resource.name | replace("_", " ") | title }}</h1>
     </div>
 
     {% if errors %}
-    <div class="error-banner">
-        <ul>
-            {% for error in errors %}
-            <li>{{ error }}</li>
-            {% endfor %}
-        </ul>
-    </div>
+    <wa-callout variant="danger" style="margin-bottom: 20px;">
+        {% for error in errors %}
+        <div>{{ error }}</div>
+        {% endfor %}
+    </wa-callout>
     {% endif %}
 
-    <div class="form-container">
-        <form method="post">
-            {% for field in fields %}
-            {% if not field.hidden %}
-            {% include "_field.html" %}
-            {% endif %}
-            {% endfor %}
-
-            <div class="form-actions">
-                <button type="submit" class="btn btn-primary">{% if mode == "create" %}Create{% else %}Save changes{% endif %}</button>
-                {% if resource.list_fn %}
-                <a href="{{ base_path }}/{{ resource.name }}/" class="btn btn-secondary">Cancel</a>
+    <wa-card>
+        <div class="form-container">
+            <form method="post">
+                {% for field in fields %}
+                {% if not field.hidden %}
+                {% include "_field.html" %}
                 {% endif %}
-            </div>
-        </form>
-    </div>
+                {% endfor %}
+
+                <div class="form-actions">
+                    <wa-button variant="brand" type="submit">
+                        <wa-icon slot="start" name="{% if mode == 'create' %}plus{% else %}floppy-disk{% endif %}"></wa-icon>
+                        {% if mode == "create" %}Create{% else %}Save changes{% endif %}
+                    </wa-button>
+                    {% if resource.list_fn %}
+                    <wa-button appearance="outlined" href="{{ base_path }}/{{ resource.name }}/">Cancel</wa-button>
+                    {% endif %}
+                </div>
+            </form>
+        </div>
+    </wa-card>
 </div>
 {% endblock %}

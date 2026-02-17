@@ -1,28 +1,33 @@
 {% extends "base.html" %}
 {% block content %}
 <div class="fade-in">
-    <div class="breadcrumb">
+    <wa-breadcrumb>
         {% if resource.list_fn %}
-        <a href="{{ base_path }}/{{ resource.name }}/">{{ resource.name | replace("_", " ") | title }}</a>
-        <span>/</span>
+        <wa-breadcrumb-item href="{{ base_path }}/{{ resource.name }}/">{{ resource.name | replace("_", " ") | title }}</wa-breadcrumb-item>
         {% endif %}
-        #{{ id }}
-    </div>
+        <wa-breadcrumb-item>#{{ id }}</wa-breadcrumb-item>
+    </wa-breadcrumb>
 
     <div class="page-header">
         <h1>{{ resource.name | replace("_", " ") | title }} #{{ id }}</h1>
         <div class="actions">
             {% if resource.update_fn %}
-            <a href="{{ base_path }}/{{ resource.name }}/{{ id }}/edit" class="btn btn-primary">Edit</a>
+            <wa-button variant="brand" href="{{ base_path }}/{{ resource.name }}/{{ id }}/edit">
+                <wa-icon slot="start" name="pen"></wa-icon>
+                Edit
+            </wa-button>
             {% endif %}
             {% if resource.list_fn %}
-            <a href="{{ base_path }}/{{ resource.name }}/" class="btn btn-secondary">Back to list</a>
+            <wa-button appearance="outlined" href="{{ base_path }}/{{ resource.name }}/">
+                <wa-icon slot="start" name="arrow-left"></wa-icon>
+                Back to list
+            </wa-button>
             {% endif %}
         </div>
     </div>
 
     {% if item %}
-    <div class="detail-card">
+    <wa-card>
         <dl class="detail-grid">
             {% for col in columns %}
             {% if not col.hidden %}
@@ -31,7 +36,7 @@
             {% endif %}
             {% endfor %}
         </dl>
-    </div>
+    </wa-card>
     {% else %}
     <div class="empty-state">Record not found.</div>
     {% endif %}

@@ -5,7 +5,10 @@
         <h1>{{ resource.name | replace("_", " ") | title }}</h1>
         <div class="actions">
             {% if resource.create_fn %}
-            <a href="{{ base_path }}/{{ resource.name }}/new" class="btn btn-primary">+ New</a>
+            <wa-button variant="brand" href="{{ base_path }}/{{ resource.name }}/new">
+                <wa-icon slot="start" name="plus"></wa-icon>
+                New
+            </wa-button>
             {% endif %}
         </div>
     </div>
@@ -13,25 +16,27 @@
     {% if resource.filter_fields %}
     <form class="filters" hx-get="{{ base_path }}/{{ resource.name }}/rows" hx-target="#table-body" hx-trigger="submit" hx-swap="innerHTML">
         {% for field in resource.filter_fields %}
-        <div class="filter-group">
-            <label>{{ field.label }}</label>
+        <div>
             {% if field.filter == "search" %}
-            <input type="search" name="{{ field.name }}" placeholder="Search...">
+            <wa-input type="search" name="{{ field.name }}" placeholder="Search {{ field.label | lower }}..." size="small" with-clear></wa-input>
             {% elif field.filter == "select" %}
-            <select name="{{ field.name }}">
-                <option value="">All</option>
+            <wa-select name="{{ field.name }}" placeholder="All {{ field.label | lower }}" size="small">
+                <wa-option value="">All</wa-option>
                 {% if field.enum_choices %}
                 {% for value, label in field.enum_choices %}
-                <option value="{{ value }}">{{ label }}</option>
+                <wa-option value="{{ value }}">{{ label }}</wa-option>
                 {% endfor %}
                 {% endif %}
-            </select>
+            </wa-select>
             {% else %}
-            <input type="text" name="{{ field.name }}">
+            <wa-input type="text" name="{{ field.name }}" placeholder="{{ field.label }}" size="small"></wa-input>
             {% endif %}
         </div>
         {% endfor %}
-        <button type="submit" class="btn btn-secondary" style="margin-bottom:1px;">Filter</button>
+        <wa-button type="submit" appearance="outlined" size="small">
+            <wa-icon slot="start" name="magnifying-glass"></wa-icon>
+            Filter
+        </wa-button>
     </form>
     {% endif %}
 
