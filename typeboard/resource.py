@@ -2,7 +2,13 @@ from dataclasses import dataclass, field
 from typing import Callable
 
 from typeboard.fields import FieldInfo
-from typeboard.introspection import extract_columns, extract_fields_from_function
+from typeboard.introspection import (
+    DependsParam,
+    extract_columns,
+    extract_depends_params,
+    extract_fields_from_function,
+    find_id_param,
+)
 
 
 @dataclass
@@ -19,6 +25,9 @@ class Resource:
     _create_fields: list[FieldInfo] | None = field(default=None, repr=False)
     _update_fields: list[FieldInfo] | None = field(default=None, repr=False)
     _filter_fields: list[FieldInfo] | None = field(default=None, repr=False)
+    _depends_cache: dict[str, list[DependsParam]] = field(default_factory=dict, repr=False)
+    _id_param_name: str | None = field(default=None, repr=False, init=False)
+    _id_param_resolved: bool = field(default=False, repr=False, init=False)
 
     @property
     def columns(self) -> list[FieldInfo]:
@@ -56,6 +65,25 @@ class Resource:
             else:
                 self._filter_fields = []
         return self._filter_fields
+
+    def _fn_for_op(self, op: str) -> Callable | None:
+        return getattr(self, f"{op}_fn", None)
+
+    def get_depends_params(self, op: str) -> list[DependsParam]:
+        if op not in self._depends_cache:
+            fn = self._fn_for_op(op)
+            self._depends_cache[op] = extract_depends_params(fn) if fn else []
+        return self._depends_cache[op]
+
+    @property
+    def id_param_name(self) -> str | None:
+        if not self._id_param_resolved:
+            for fn in (self.get_fn, self.update_fn, self.delete_fn):
+                if fn is not None:
+                    self._id_param_name = find_id_param(fn)
+                    break
+            self._id_param_resolved = True
+        return self._id_param_name
 
     # Decorator-style registration
     @property

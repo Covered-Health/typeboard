@@ -1,3 +1,8 @@
+from typing import Annotated
+
+from fastapi import Depends
+
+from typeboard.fields import AdminField
 from typeboard.pagination import Page
 from typeboard.site import AdminSite
 
@@ -37,3 +42,36 @@ def test_graceful_degradation():
     assert res.create_fn is None
     assert res.update_fn is None
     assert res.delete_fn is None
+
+
+def fake_dep():
+    yield "db"
+
+
+def list_with_db(
+    db: Annotated[str, Depends(fake_dep)],
+    page: int = 1,
+    page_size: int = 25,
+) -> dict:
+    return {}
+
+
+def get_with_db(
+    db: Annotated[str, Depends(fake_dep)],
+    org_id: Annotated[int, AdminField(is_id=True)],
+) -> dict:
+    return {"id": org_id}
+
+
+def test_resource_stores_depends_params():
+    site = AdminSite(title="Test")
+    res = site.resource("orgs", list=list_with_db, get=get_with_db)
+    list_deps = res.get_depends_params("list")
+    assert len(list_deps) == 1
+    assert list_deps[0].name == "db"
+
+
+def test_resource_resolves_id_param():
+    site = AdminSite(title="Test")
+    res = site.resource("orgs", get=get_with_db)
+    assert res.id_param_name == "org_id"
