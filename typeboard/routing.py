@@ -8,17 +8,23 @@ from typing import Any, get_args, get_origin
 from fastapi import APIRouter, Depends, FastAPI, Request
 from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
 
+from typeboard.fields import unwrap_annotated
+from typeboard.introspection import (
+    DependsParam,
+    find_pagination_params,
+    find_sort_param,
+)
 from typeboard.rendering import create_renderer
 from typeboard.resource import Resource
 
 
 def _coerce(value: Any, python_type: type) -> Any:
     """Coerce a form string value to the target Python type."""
-    import types
+    import types as _types
 
     origin = get_origin(python_type)
     args = get_args(python_type)
-    if origin is types.UnionType:
+    if origin is _types.UnionType:
         non_none = [a for a in args if a is not type(None)]
         if non_none:
             python_type = non_none[0]
@@ -40,31 +46,90 @@ def _coerce(value: Any, python_type: type) -> Any:
     return str(value)
 
 
+def _coerce_id(id_str: str, fn, id_param_name: str | None = None) -> Any:
+    """Coerce the ID string to match the function's ID parameter type."""
+    if fn is None:
+        return id_str
+    target_name = id_param_name or "id"
+    hints = inspect.get_annotations(fn, eval_str=True)
+    ann = hints.get(target_name, str)
+    base = unwrap_annotated(ann)
+    return _coerce(id_str, base)
+
+
+def _inject_depends(handler, depends_params: list[DependsParam]):
+    """Add DI params to a handler's __signature__ so FastAPI resolves them.
+
+    Always strips **kwargs from the signature (FastAPI can't handle VAR_KEYWORD),
+    then appends explicit keyword-only parameters for each DI dependency.
+    """
+    sig = inspect.signature(handler)
+    existing_params = list(sig.parameters.values())
+
+    # Remove **kwargs from existing params (FastAPI doesn't support VAR_KEYWORD)
+    filtered = [p for p in existing_params if p.kind != inspect.Parameter.VAR_KEYWORD]
+
+    for dp in depends_params:
+        filtered.append(
+            inspect.Parameter(
+                dp.name,
+                kind=inspect.Parameter.KEYWORD_ONLY,
+                default=dp.default if dp.default is not inspect.Parameter.empty else inspect.Parameter.empty,
+                annotation=dp.annotation,
+            )
+        )
+
+    handler.__signature__ = sig.replace(parameters=filtered)
+    return handler
+
+
 def build_resource_router(resource: Resource, render) -> APIRouter:
     router = APIRouter(prefix=f"/{resource.name}", tags=[resource.name])
 
+    id_param = resource.id_param_name
+
     if resource.list_fn:
+        list_deps = resource.get_depends_params("list")
+        page_param, page_size_param = find_pagination_params(resource.list_fn)
+        sort_param = find_sort_param(resource.list_fn)
+
         async def list_page(request: Request, _res=resource):
             return render("list.html", resource=_res, request=request)
 
-        async def rows(request: Request, _res=resource):
+        async def rows(request: Request, _res=resource, _deps=list_deps,
+                       _page_p=page_param, _ps_p=page_size_param, _sort_p=sort_param, **kwargs):
             from typeboard.pagination import Page
 
             page = int(request.query_params.get("page", "1"))
             page_size = int(request.query_params.get("page_size", "25"))
             sort = request.query_params.get("sort")
 
-            kwargs: dict[str, Any] = {"page": page, "page_size": page_size}
-            if sort:
-                kwargs["sort"] = sort
+            fn_kwargs: dict[str, Any] = {}
+
+            # DI params
+            for dp in _deps:
+                if dp.name in kwargs:
+                    fn_kwargs[dp.name] = kwargs[dp.name]
+
+            # Pagination
+            if _page_p:
+                fn_kwargs[_page_p] = page
+            if _ps_p:
+                fn_kwargs[_ps_p] = page_size
+
+            # Sort
+            if sort and _sort_p:
+                fn_kwargs[_sort_p] = sort
+
+            # Filters
             for ff in _res.filter_fields:
                 val = request.query_params.get(ff.name)
                 if val:
-                    kwargs[ff.name] = val
+                    fn_kwargs[ff.name] = val
 
             # Only pass kwargs the function actually accepts
             sig = inspect.signature(_res.list_fn)
-            valid_kwargs = {k: v for k, v in kwargs.items() if k in sig.parameters}
+            valid_kwargs = {k: v for k, v in fn_kwargs.items() if k in sig.parameters}
             result = _res.list_fn(**valid_kwargs)
 
             items = []
@@ -84,24 +149,33 @@ def build_resource_router(resource: Resource, render) -> APIRouter:
                 columns=_res.columns,
             )
 
+        _inject_depends(rows, list_deps)
+
         router.add_api_route("/", list_page, methods=["GET"], response_class=HTMLResponse)
         router.add_api_route("/rows", rows, methods=["GET"], response_class=HTMLResponse)
 
     if resource.get_fn:
-        async def detail_page(request: Request, id: str, _res=resource):
-            coerced_id = _coerce_id(id, _res.get_fn)
-            item = _res.get_fn(coerced_id)
+        get_deps = resource.get_depends_params("get")
+
+        async def detail_page(request: Request, id: str, _res=resource, _deps=get_deps, _id_p=id_param, **kwargs):
+            coerced_id = _coerce_id(id, _res.get_fn, _id_p)
+            fn_kwargs = {dp.name: kwargs[dp.name] for dp in _deps if dp.name in kwargs}
+            fn_kwargs[_id_p or "id"] = coerced_id
+            item = _res.get_fn(**fn_kwargs)
             columns = _res.columns
             return render("detail.html", resource=_res, request=request, id=id, item=item, columns=columns)
 
+        _inject_depends(detail_page, get_deps)
         router.add_api_route("/{id}", detail_page, methods=["GET"], response_class=HTMLResponse)
 
     if resource.create_fn:
+        create_deps = resource.get_depends_params("create")
+
         async def create_form(request: Request, _res=resource):
             fields = _res.create_fields
             return render("form.html", resource=_res, request=request, mode="create", fields=fields, values={}, errors=[])
 
-        async def create_submit(request: Request, _res=resource):
+        async def create_submit(request: Request, _res=resource, _deps=create_deps, **kwargs):
             from pydantic import BaseModel
             fields = _res.create_fields
             form_data = await request.form()
@@ -116,10 +190,10 @@ def build_resource_router(resource: Resource, render) -> APIRouter:
                     continue
                 values[field.name] = _coerce(raw, field.python_type)
 
-            # Call create function
+            fn_kwargs = {dp.name: kwargs[dp.name] for dp in _deps if dp.name in kwargs}
+
             sig = inspect.signature(_res.create_fn)
             params = list(sig.parameters.values())
-            # Check if function takes a single Pydantic model param
             model_param = None
             for p in params:
                 hints = inspect.get_annotations(_res.create_fn, eval_str=True)
@@ -131,11 +205,12 @@ def build_resource_router(resource: Resource, render) -> APIRouter:
             if model_param:
                 name, model_cls = model_param
                 model_instance = model_cls(**values)
-                result = _res.create_fn(**{name: model_instance})
+                fn_kwargs[name] = model_instance
             else:
-                result = _res.create_fn(**values)
+                fn_kwargs.update(values)
 
-            # Redirect to detail or list
+            result = _res.create_fn(**fn_kwargs)
+
             if _res.get_fn and result is not None:
                 item_id_val = getattr(result, "id", None) or (result.get("id") if isinstance(result, dict) else None)
                 if item_id_val is not None:
@@ -148,12 +223,20 @@ def build_resource_router(resource: Resource, render) -> APIRouter:
                 status_code=303,
             )
 
+        _inject_depends(create_submit, create_deps)
         router.add_api_route("/new", create_form, methods=["GET"], response_class=HTMLResponse)
         router.add_api_route("/new", create_submit, methods=["POST"])
 
     if resource.update_fn:
-        async def edit_form(request: Request, id: str, _res=resource):
-            item = _res.get_fn(int(id)) if _res.get_fn else None
+        update_deps = resource.get_depends_params("update")
+        # edit_form needs get_fn deps to load the current item
+        edit_form_deps = resource.get_depends_params("get") if resource.get_fn else []
+
+        async def edit_form(request: Request, id: str, _res=resource, _deps=edit_form_deps, _id_p=id_param, **kwargs):
+            fn_kwargs = {dp.name: kwargs[dp.name] for dp in _deps if dp.name in kwargs}
+            coerced_id = _coerce_id(id, _res.get_fn, _id_p) if _res.get_fn else int(id)
+            fn_kwargs[_id_p or "id"] = coerced_id
+            item = _res.get_fn(**fn_kwargs) if _res.get_fn else None
             fields = _res.update_fields
             values = {}
             if item:
@@ -164,7 +247,9 @@ def build_resource_router(resource: Resource, render) -> APIRouter:
                         values[f.name] = getattr(item, f.name, f.default)
             return render("form.html", resource=_res, request=request, mode="edit", id=id, fields=fields, values=values, errors=[])
 
-        async def edit_submit(request: Request, id: str, _res=resource):
+        _inject_depends(edit_form, edit_form_deps)
+
+        async def edit_submit(request: Request, id: str, _res=resource, _deps=update_deps, _id_p=id_param, **kwargs):
             from pydantic import BaseModel
             fields = _res.update_fields
             form_data = await request.form()
@@ -179,7 +264,9 @@ def build_resource_router(resource: Resource, render) -> APIRouter:
                     continue
                 values[field.name] = _coerce(raw, field.python_type)
 
-            coerced_id = _coerce_id(id, _res.update_fn)
+            coerced_id = _coerce_id(id, _res.update_fn, _id_p)
+            fn_kwargs = {dp.name: kwargs[dp.name] for dp in _deps if dp.name in kwargs}
+            fn_kwargs[_id_p or "id"] = coerced_id
 
             sig = inspect.signature(_res.update_fn)
             params = list(sig.parameters.values())
@@ -194,46 +281,40 @@ def build_resource_router(resource: Resource, render) -> APIRouter:
             if model_param:
                 name, model_cls = model_param
                 model_instance = model_cls(**values)
-                _res.update_fn(coerced_id, **{name: model_instance})
+                fn_kwargs[name] = model_instance
             else:
-                _res.update_fn(coerced_id, **values)
+                fn_kwargs.update(values)
+
+            _res.update_fn(**fn_kwargs)
 
             return RedirectResponse(
                 url=f"{request.scope.get('root_path', '')}/{_res.name}/{id}",
                 status_code=303,
             )
 
+        _inject_depends(edit_submit, update_deps)
         router.add_api_route("/{id}/edit", edit_form, methods=["GET"], response_class=HTMLResponse)
         router.add_api_route("/{id}/edit", edit_submit, methods=["POST"])
 
     if resource.delete_fn:
-        async def delete_item(request: Request, id: str, _res=resource):
-            coerced_id = _coerce_id(id, _res.delete_fn)
-            _res.delete_fn(coerced_id)
+        delete_deps = resource.get_depends_params("delete")
+
+        async def delete_item(request: Request, id: str, _res=resource, _deps=delete_deps, _id_p=id_param, **kwargs):
+            coerced_id = _coerce_id(id, _res.delete_fn, _id_p)
+            fn_kwargs = {dp.name: kwargs[dp.name] for dp in _deps if dp.name in kwargs}
+            fn_kwargs[_id_p or "id"] = coerced_id
+            _res.delete_fn(**fn_kwargs)
             return HTMLResponse(content="", headers={"HX-Redirect": f"{request.scope.get('root_path', '')}/{_res.name}/"})
 
+        _inject_depends(delete_item, delete_deps)
         router.add_api_route("/{id}", delete_item, methods=["DELETE"])
 
     return router
 
 
-def _coerce_id(id_str: str, fn) -> Any:
-    """Coerce the ID string to match the function's first non-DI parameter type."""
-    if fn is None:
-        return id_str
-    sig = inspect.signature(fn)
-    hints = inspect.get_annotations(fn, eval_str=True)
-    for name, param in sig.parameters.items():
-        if name == "id" or name == list(sig.parameters.keys())[0]:
-            ann = hints.get(name, str)
-            return _coerce(id_str, ann)
-    return id_str
-
-
 def build_app(site) -> FastAPI:
     admin_app = FastAPI(title=site.title, docs_url=None, redoc_url=None)
 
-    # If logo_url is a Path, serve it as a static file and replace with the URL
     if isinstance(site.logo_url, Path):
         logo_path = site.logo_url.resolve()
         media_type = (
