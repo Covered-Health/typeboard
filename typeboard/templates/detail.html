@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="actions">
+    <h1>{{ resource.name | replace("_", " ") | title }} #{{ id }}</h1>
+    {% if resource.update_fn %}
+    <a href="{{ base_path }}/{{ resource.name }}/{{ id }}/edit" role="button">Edit</a>
+    {% endif %}
+    {% if resource.list_fn %}
+    <a href="{{ base_path }}/{{ resource.name }}/" role="button" class="outline">Back to list</a>
+    {% endif %}
+</div>
+
+{% if item %}
+<dl class="detail-grid">
+    {% for col in columns %}
+    {% if not col.hidden %}
+    <dt>{{ col.label }}</dt>
+    <dd>{{ item_value(item, col.name) }}</dd>
+    {% endif %}
+    {% endfor %}
+</dl>
+{% else %}
+<p>Record not found.</p>
+{% endif %}
+{% endblock %}

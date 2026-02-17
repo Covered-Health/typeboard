@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ site.title }}</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+    <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+    <style>
+        body { display: flex; min-height: 100vh; margin: 0; }
+        nav.sidebar { width: 220px; padding: 1rem; background: var(--pico-card-background-color); border-right: 1px solid var(--pico-muted-border-color); }
+        nav.sidebar h2 { font-size: 1.2rem; margin-bottom: 1rem; }
+        nav.sidebar ul { list-style: none; padding: 0; }
+        nav.sidebar li { margin-bottom: 0.5rem; }
+        nav.sidebar a { text-decoration: none; }
+        nav.sidebar a.active { font-weight: bold; }
+        main { flex: 1; padding: 2rem; overflow-x: auto; }
+        .actions { display: flex; gap: 0.5rem; align-items: center; margin-bottom: 1rem; }
+        .actions > * { margin: 0; }
+        table { width: 100%; }
+        .filters { display: flex; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap; align-items: end; }
+        .filters label { margin-bottom: 0; }
+        .filters input, .filters select { margin-bottom: 0; }
+        .pagination { display: flex; gap: 0.5rem; justify-content: center; margin-top: 1rem; }
+        .field-error { color: var(--pico-del-color); font-size: 0.85rem; }
+        .detail-grid { display: grid; grid-template-columns: max-content 1fr; gap: 0.5rem 1.5rem; }
+        .detail-grid dt { font-weight: bold; }
+    </style>
+</head>
+<body>
+    <nav class="sidebar">
+        <h2><a href="{{ base_path }}/">{{ site.title }}</a></h2>
+        <ul>
+            {% for name, res in site.resources.items() %}
+            <li>
+                <a href="{{ base_path }}/{{ name }}/"
+                   {% if resource is defined and resource.name == name %}class="active"{% endif %}>
+                    {{ name | replace("_", " ") | title }}
+                </a>
+            </li>
+            {% endfor %}
+        </ul>
+    </nav>
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+</body>
+</html>

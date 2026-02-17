@@ -1,0 +1,46 @@
+{% if items %}
+{% for item in items %}
+<tr>
+    {% for col in columns %}
+    {% if col.column and not col.hidden %}
+    <td>
+        {% if loop.first and resource.get_fn %}
+        <a href="{{ base_path }}/{{ resource.name }}/{{ item_id(item) }}">{{ item_value(item, col.name) }}</a>
+        {% else %}
+        {{ item_value(item, col.name) }}
+        {% endif %}
+    </td>
+    {% endif %}
+    {% endfor %}
+    {% if resource.update_fn or resource.delete_fn %}
+    <td>
+        {% if resource.update_fn %}
+        <a href="{{ base_path }}/{{ resource.name }}/{{ item_id(item) }}/edit">Edit</a>
+        {% endif %}
+        {% if resource.delete_fn %}
+        <button hx-delete="{{ base_path }}/{{ resource.name }}/{{ item_id(item) }}"
+                hx-confirm="Are you sure?" hx-target="closest tr" hx-swap="outerHTML">Delete</button>
+        {% endif %}
+    </td>
+    {% endif %}
+</tr>
+{% endfor %}
+{% else %}
+<tr><td colspan="100">No records found.</td></tr>
+{% endif %}
+
+{% if page_info %}
+<tr>
+    <td colspan="100">
+        <div class="pagination">
+            {% if page_info.has_prev %}
+            <a hx-get="{{ base_path }}/{{ resource.name }}/rows?page={{ page_info.page - 1 }}" hx-target="#table-body" hx-swap="innerHTML" role="button" class="outline">&laquo; Prev</a>
+            {% endif %}
+            <span>Page {{ page_info.page }} of {{ page_info.total_pages }} ({{ page_info.total }} total)</span>
+            {% if page_info.has_next %}
+            <a hx-get="{{ base_path }}/{{ resource.name }}/rows?page={{ page_info.page + 1 }}" hx-target="#table-body" hx-swap="innerHTML" role="button" class="outline">Next &raquo;</a>
+            {% endif %}
+        </div>
+    </td>
+</tr>
+{% endif %}
