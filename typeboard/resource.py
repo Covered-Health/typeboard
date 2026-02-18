@@ -84,6 +84,23 @@ class Resource:
         return self._depends_cache[op]
 
     @property
+    def display_name_field(self) -> str:
+        """Find the display name field for this resource.
+
+        Priority: display_name=True > column named name/title/label > first non-ID string > "id".
+        """
+        for col in self.columns:
+            if col.display_name:
+                return col.name
+        for col in self.columns:
+            if col.name in ("name", "title", "label", "display_name"):
+                return col.name
+        for col in self.columns:
+            if col.python_type is str and col.name not in ("id", "pk"):
+                return col.name
+        return "id"
+
+    @property
     def id_param_name(self) -> str | None:
         if not self._id_param_resolved:
             for fn in (self.get_fn, self.update_fn, self.delete_fn):

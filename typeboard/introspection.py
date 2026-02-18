@@ -53,8 +53,18 @@ def _build_field_info(
     has_default = default is not inspect.Parameter.empty
     required = not optional and not has_default
 
-    widget = (admin.widget if admin and admin.widget else infer_widget(base_type))
-    label = (admin.label if admin and admin.label else label_from_name(name))
+    # Auto-set widget for relationship fields
+    if admin and admin.relationship and not admin.widget:
+        origin = get_origin(base_type)
+        widget = "multiselect" if origin is list else "select"
+    else:
+        widget = (admin.widget if admin and admin.widget else infer_widget(base_type))
+
+    # Auto-set label from relationship resource name instead of field name
+    if admin and admin.relationship and not admin.label:
+        label = admin.relationship.replace("_", " ").title()
+    else:
+        label = (admin.label if admin and admin.label else label_from_name(name))
 
     return FieldInfo(
         name=name,
@@ -70,6 +80,9 @@ def _build_field_info(
         order=admin.order if admin else None,
         enum_choices=get_enum_choices(base_type),
         choices_callable=admin.choices if admin else None,
+        display_name=admin.display_name if admin else False,
+        relationship=admin.relationship if admin else None,
+        relationship_search=admin.relationship_search if admin else None,
     )
 
 

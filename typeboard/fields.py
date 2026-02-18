@@ -19,6 +19,9 @@ class AdminField:
     pagination: str | None = None  # "page" or "page_size"
     sort: bool = False
     choices: Callable | None = None
+    display_name: bool = False
+    relationship: str | None = None
+    relationship_search: str | None = None
 
 
 @dataclass
@@ -37,6 +40,9 @@ class FieldInfo:
     order: int | None = None
     enum_choices: list[tuple[str, str]] | None = None
     choices_callable: Callable | None = None
+    display_name: bool = False
+    relationship: str | None = None
+    relationship_search: str | None = None
 
 
 def _unwrap_optional(python_type: type) -> type:

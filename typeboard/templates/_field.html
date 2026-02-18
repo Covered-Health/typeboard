@@ -23,6 +23,29 @@
     <wa-input type="datetime-local" label="{{ field.label }}"
               name="{{ field.name }}" value="{{ values.get(field.name, field.default or '') }}"
               {% if field.read_only %}disabled{% endif %} {% if field.required %}required{% endif %}></wa-input>
+    {% elif field.widget == "multiselect" and field.relationship %}
+    {% set current = values.get(field.name, []) | map('string') | list %}
+    {% set select_id = "rel-" ~ field.name %}
+    <wa-select label="{{ field.label }}"
+               name="{{ field.name }}" multiple with-clear pill
+               id="{{ select_id }}"
+               {% if field.read_only %}disabled{% endif %}
+               max-options-visible="5"
+               placeholder="Select {{ field.label | lower }}...">
+        <wa-input slot="start" size="small" placeholder="Type to filter..." with-clear
+                  style="margin: 4px 8px; width: calc(100% - 16px);"
+                  name="q"
+                  hx-get="{{ base_path }}/{{ resource.name }}/options/{{ field.name }}"
+                  hx-trigger="input changed delay:300ms, load"
+                  hx-target="#{{ select_id }}-opts"
+                  hx-swap="innerHTML"
+                  hx-vals='js:{selected: (function(){var s=document.getElementById("{{ select_id }}");return s&&s.value?Array.from(s.value).join(","):"{{ current | join(',') }}"})()}'></wa-input>
+        <div id="{{ select_id }}-opts">
+            {% for value, label in field.enum_choices or [] %}
+            <wa-option value="{{ value }}" {% if value|string in current %}selected{% endif %}>{{ label }}</wa-option>
+            {% endfor %}
+        </div>
+    </wa-select>
     {% elif field.widget == "multiselect" %}
     {% set current = values.get(field.name, []) | map('string') | list %}
     {% set select_id = "ms-" ~ field.name %}
