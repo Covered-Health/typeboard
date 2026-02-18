@@ -185,19 +185,6 @@ def build_resource_router(resource: Resource, render) -> APIRouter:
         router.add_api_route("/", list_page, methods=["GET"], response_class=HTMLResponse)
         router.add_api_route("/rows", rows, methods=["GET"], response_class=HTMLResponse)
 
-    if resource.get_fn:
-        get_deps = resource.get_depends_params("get")
-
-        async def detail_page(request: Request, id: str, _res=resource, _deps=get_deps, _id_p=id_param, **kwargs):
-            coerced_id = _coerce_id(id, _res.get_fn, _id_p)
-            fn_kwargs = {dp.name: kwargs[dp.name] for dp in _deps if dp.name in kwargs}
-            fn_kwargs[_id_p or "id"] = coerced_id
-            item = _res.get_fn(**fn_kwargs)
-            return render("detail.html", resource=_res, request=request, id=id, item=item, columns=_res.detail_fields)
-
-        _inject_depends(detail_page, get_deps)
-        router.add_api_route("/{id}", detail_page, methods=["GET"], response_class=HTMLResponse)
-
     if resource.create_fn:
         create_deps = resource.get_depends_params("create")
         create_form_choices_deps = _collect_choices_deps(resource.create_fields)
@@ -271,6 +258,19 @@ def build_resource_router(resource: Resource, render) -> APIRouter:
         _inject_depends(create_submit, create_deps)
         router.add_api_route("/new", create_form, methods=["GET"], response_class=HTMLResponse)
         router.add_api_route("/new", create_submit, methods=["POST"])
+
+    if resource.get_fn:
+        get_deps = resource.get_depends_params("get")
+
+        async def detail_page(request: Request, id: str, _res=resource, _deps=get_deps, _id_p=id_param, **kwargs):
+            coerced_id = _coerce_id(id, _res.get_fn, _id_p)
+            fn_kwargs = {dp.name: kwargs[dp.name] for dp in _deps if dp.name in kwargs}
+            fn_kwargs[_id_p or "id"] = coerced_id
+            item = _res.get_fn(**fn_kwargs)
+            return render("detail.html", resource=_res, request=request, id=id, item=item, columns=_res.detail_fields)
+
+        _inject_depends(detail_page, get_deps)
+        router.add_api_route("/{id}", detail_page, methods=["GET"], response_class=HTMLResponse)
 
     if resource.update_fn:
         update_deps = resource.get_depends_params("update")
