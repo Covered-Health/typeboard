@@ -1,6 +1,6 @@
 <div class="form-field">
     {% if field.widget == "textarea" %}
-    <wa-textarea label="{{ field.label }}{% if field.required %} *{% endif %}"
+    <wa-textarea label="{{ field.label }}"
                  name="{{ field.name }}"
                  {% if field.read_only %}disabled{% endif %}
                  {% if field.required %}required{% endif %}
@@ -11,22 +11,22 @@
                {% if values.get(field.name, field.default) %}checked{% endif %}
                {% if field.read_only %}disabled{% endif %}>{{ field.label }}</wa-switch>
     {% elif field.widget == "number" %}
-    <wa-input type="number" label="{{ field.label }}{% if field.required %} *{% endif %}"
+    <wa-input type="number" label="{{ field.label }}"
               name="{{ field.name }}" value="{{ values.get(field.name, field.default or '') }}"
               {% if field.read_only %}disabled{% endif %} {% if field.required %}required{% endif %}
               placeholder="0"></wa-input>
     {% elif field.widget == "date" %}
-    <wa-input type="date" label="{{ field.label }}{% if field.required %} *{% endif %}"
+    <wa-input type="date" label="{{ field.label }}"
               name="{{ field.name }}" value="{{ values.get(field.name, field.default or '') }}"
               {% if field.read_only %}disabled{% endif %} {% if field.required %}required{% endif %}></wa-input>
     {% elif field.widget == "datetime" %}
-    <wa-input type="datetime-local" label="{{ field.label }}{% if field.required %} *{% endif %}"
+    <wa-input type="datetime-local" label="{{ field.label }}"
               name="{{ field.name }}" value="{{ values.get(field.name, field.default or '') }}"
               {% if field.read_only %}disabled{% endif %} {% if field.required %}required{% endif %}></wa-input>
     {% elif field.widget == "multiselect" %}
     {% set current = values.get(field.name, []) | map('string') | list %}
     {% set select_id = "ms-" ~ field.name %}
-    <wa-select label="{{ field.label }}{% if field.required %} *{% endif %}"
+    <wa-select label="{{ field.label }}"
                name="{{ field.name }}" multiple with-clear
                id="{{ select_id }}"
                {% if field.read_only %}disabled{% endif %}
@@ -42,7 +42,7 @@
         {% endif %}
     </wa-select>
     {% elif field.widget == "select" %}
-    <wa-select label="{{ field.label }}{% if field.required %} *{% endif %}"
+    <wa-select label="{{ field.label }}"
                name="{{ field.name }}"
                {% if field.read_only %}disabled{% endif %} {% if field.required %}required{% endif %}
                placeholder="Select...">
@@ -54,7 +54,7 @@
         {% endif %}
     </wa-select>
     {% else %}
-    <wa-input type="text" label="{{ field.label }}{% if field.required %} *{% endif %}"
+    <wa-input type="text" label="{{ field.label }}"
               name="{{ field.name }}" value="{{ values.get(field.name, field.default or '') }}"
               {% if field.read_only %}disabled{% endif %} {% if field.required %}required{% endif %}
               placeholder="Enter {{ field.label | lower }}..."></wa-input>
