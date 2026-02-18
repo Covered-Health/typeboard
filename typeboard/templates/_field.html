@@ -27,7 +27,7 @@
     {% set current = values.get(field.name, []) | map('string') | list %}
     {% set select_id = "ms-" ~ field.name %}
     <wa-select label="{{ field.label }}"
-               name="{{ field.name }}" multiple with-clear
+               name="{{ field.name }}" multiple with-clear pill
                id="{{ select_id }}"
                {% if field.read_only %}disabled{% endif %}
                max-options-visible="5"
