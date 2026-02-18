@@ -1,37 +1,25 @@
 {% if items %}
 {% for item in items %}
-<tr class="fade-in">
+<tr class="fade-in"
+    {% if resource.get_fn %}
+    style="cursor:pointer;"
+    onclick="window.location='{{ base_path }}/{{ resource.name }}/{{ item_id(item) }}'"
+    {% endif %}>
     {% for col in columns %}
     {% if col.column and not col.hidden %}
-    <td>
-        {% if loop.first and resource.get_fn %}
-        <a href="{{ base_path }}/{{ resource.name }}/{{ item_id(item) }}">{{ item_value(item, col.name) }}</a>
-        {% else %}
-        {{ item_value(item, col.name) }}
-        {% endif %}
-    </td>
+    <td>{{ item_value(item, col.name) }}</td>
     {% endif %}
     {% endfor %}
-    {% if resource.update_fn or resource.delete_fn %}
-    <td style="text-align:right;">
-        <div class="table-actions" style="justify-content:flex-end;">
-            {% if resource.update_fn %}
-            <wa-button size="small" appearance="outlined" href="{{ base_path }}/{{ resource.name }}/{{ item_id(item) }}/edit">
-                <wa-icon slot="start" name="pen"></wa-icon>
-                Edit
-            </wa-button>
-            {% endif %}
-            {% if resource.delete_fn %}
-            <wa-button size="small" variant="danger" appearance="outlined"
-                    hx-delete="{{ base_path }}/{{ resource.name }}/{{ item_id(item) }}"
-                    hx-confirm="Are you sure you want to delete this record?"
-                    hx-target="closest tr"
-                    hx-swap="outerHTML">
-                <wa-icon slot="start" name="trash"></wa-icon>
-                Delete
-            </wa-button>
-            {% endif %}
-        </div>
+    {% if resource.delete_fn %}
+    <td style="text-align:right;" onclick="event.stopPropagation()">
+        <wa-button size="small" variant="danger" appearance="outlined"
+                hx-delete="{{ base_path }}/{{ resource.name }}/{{ item_id(item) }}"
+                hx-confirm="Are you sure you want to delete this record?"
+                hx-target="closest tr"
+                hx-swap="outerHTML">
+            <wa-icon slot="start" name="trash"></wa-icon>
+            Delete
+        </wa-button>
     </td>
     {% endif %}
 </tr>
