@@ -25,11 +25,16 @@
               {% if field.read_only %}disabled{% endif %} {% if field.required %}required{% endif %}></wa-input>
     {% elif field.widget == "multiselect" %}
     {% set current = values.get(field.name, []) | map('string') | list %}
+    {% set select_id = "ms-" ~ field.name %}
     <wa-select label="{{ field.label }}{% if field.required %} *{% endif %}"
                name="{{ field.name }}" multiple with-clear
+               id="{{ select_id }}"
                {% if field.read_only %}disabled{% endif %}
                max-options-visible="5"
                placeholder="Select {{ field.label | lower }}...">
+        <wa-input slot="start" size="small" placeholder="Type to filter..." with-clear
+                  style="margin: 4px 8px; width: calc(100% - 16px);"
+                  oninput="(function(el){var q=el.value.toLowerCase();el.closest('wa-select').querySelectorAll('wa-option').forEach(function(o){o.hidden=q&&o.textContent.toLowerCase().indexOf(q)<0})})(this)"></wa-input>
         {% if field.enum_choices %}
         {% for value, label in field.enum_choices %}
         <wa-option value="{{ value }}" {% if value|string in current %}selected{% endif %}>{{ label }}</wa-option>
