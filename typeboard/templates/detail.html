@@ -32,7 +32,19 @@
             {% for col in columns %}
             {% if not col.hidden %}
             <dt>{{ col.label }}</dt>
-            <dd>{{ item_value(item, col.name) }}</dd>
+            <dd>
+                {% set val = item_value(item, col.name) %}
+                {% if val is iterable and val is not string and val is not mapping %}
+                <div style="display:flex;gap:4px;flex-wrap:wrap;">
+                    {% for v in val %}
+                    <wa-tag size="small" variant="neutral">{{ v }}</wa-tag>
+                    {% endfor %}
+                    {% if not val %}<span style="color:var(--wa-color-neutral-50);">None</span>{% endif %}
+                </div>
+                {% else %}
+                {{ val }}
+                {% endif %}
+            </dd>
             {% endif %}
             {% endfor %}
         </dl>
