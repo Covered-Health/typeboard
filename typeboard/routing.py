@@ -155,6 +155,7 @@ def _build_relationship_choices(target_resource: Resource, display_field: str):
     from typeboard.pagination import Page
 
     list_fn = target_resource.list_fn
+    id_field = target_resource.id_param_name or "id"
 
     def choices_fn(**kwargs):
         sig = inspect.signature(list_fn)
@@ -169,7 +170,7 @@ def _build_relationship_choices(target_resource: Resource, display_field: str):
         items = result.items if isinstance(result, Page) else (result if isinstance(result, list) else [])
         out = []
         for item in items:
-            item_id = item.get("id") if isinstance(item, dict) else getattr(item, "id", None)
+            item_id = item.get(id_field) if isinstance(item, dict) else getattr(item, id_field, None)
             item_label = item.get(display_field) if isinstance(item, dict) else getattr(item, display_field, None)
             out.append((str(item_id), str(item_label)))
         return out
@@ -248,9 +249,10 @@ def _resolve_detail_relationships(item, fields: list[FieldInfo], site, di_kwargs
         items = result.items if isinstance(result, Page) else (result if isinstance(result, list) else [])
 
         # Build ID → (id, label) map
+        id_field = target.id_param_name or "id"
         id_map = {}
         for t in items:
-            t_id = t.get("id") if isinstance(t, dict) else getattr(t, "id", None)
+            t_id = t.get(id_field) if isinstance(t, dict) else getattr(t, id_field, None)
             t_label = t.get(display) if isinstance(t, dict) else getattr(t, display, None)
             id_map[t_id] = (t_id, str(t_label))
 
@@ -300,6 +302,8 @@ def _register_options_endpoints(router: APIRouter, resource: Resource, site, ren
         search_param = _find_search_param(target, rel_field)
         target_deps = extract_depends_params(target_list_fn)
 
+        target_id_field = target.id_param_name or "id"
+
         async def options_handler(
             request: Request,
             _target=target,
@@ -307,6 +311,7 @@ def _register_options_endpoints(router: APIRouter, resource: Resource, site, ren
             _display=display,
             _search_param=search_param,
             _target_deps=target_deps,
+            _id_field=target_id_field,
             **kwargs,
         ):
             q = request.query_params.get("q", "").strip()
@@ -335,7 +340,7 @@ def _register_options_endpoints(router: APIRouter, resource: Resource, site, ren
             html_parts = []
             seen_ids: set[str] = set()
             for item in items:
-                item_id = str(item.get("id") if isinstance(item, dict) else getattr(item, "id", ""))
+                item_id = str(item.get(_id_field) if isinstance(item, dict) else getattr(item, _id_field, ""))
                 item_label = str(item.get(_display) if isinstance(item, dict) else getattr(item, _display, ""))
                 is_selected = item_id in selected_ids
                 sel = " selected" if is_selected else ""
