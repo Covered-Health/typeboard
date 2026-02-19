@@ -1,85 +1,87 @@
-<div class="form-field">
+<div class="mb-3">
     {% if field.widget == "textarea" %}
-    <wa-textarea label="{{ field.label }}"
-                 name="{{ field.name }}"
-                 {% if field.read_only %}disabled{% endif %}
-                 {% if field.required %}required{% endif %}
-                 placeholder="Enter {{ field.label | lower }}..."
-                 rows="4" resize="vertical">{{ values.get(field.name, field.default or '') }}</wa-textarea>
+    <label class="form-label" for="field-{{ field.name }}">{{ field.label }}</label>
+    <textarea class="form-control" id="field-{{ field.name }}"
+              name="{{ field.name }}"
+              {% if field.read_only %}disabled{% endif %}
+              {% if field.required %}required{% endif %}
+              placeholder="Enter {{ field.label | lower }}..."
+              rows="4">{{ values.get(field.name, field.default or '') }}</textarea>
+
     {% elif field.widget == "checkbox" %}
-    <wa-switch name="{{ field.name }}"
+    <div class="form-check form-switch">
+        <input class="form-check-input" type="checkbox" role="switch"
+               id="field-{{ field.name }}" name="{{ field.name }}"
                {% if values.get(field.name, field.default) %}checked{% endif %}
-               {% if field.read_only %}disabled{% endif %}>{{ field.label }}</wa-switch>
+               {% if field.read_only %}disabled{% endif %}>
+        <label class="form-check-label" for="field-{{ field.name }}">{{ field.label }}</label>
+    </div>
+
     {% elif field.widget == "number" %}
-    <wa-input type="number" label="{{ field.label }}"
-              name="{{ field.name }}" value="{{ values.get(field.name, field.default or '') }}"
-              {% if field.read_only %}disabled{% endif %} {% if field.required %}required{% endif %}
-              placeholder="0"></wa-input>
+    <label class="form-label" for="field-{{ field.name }}">{{ field.label }}</label>
+    <input type="number" class="form-control" id="field-{{ field.name }}"
+           name="{{ field.name }}" value="{{ values.get(field.name, field.default or '') }}"
+           {% if field.read_only %}disabled{% endif %} {% if field.required %}required{% endif %}
+           placeholder="0">
+
     {% elif field.widget == "date" %}
-    <wa-input type="date" label="{{ field.label }}"
-              name="{{ field.name }}" value="{{ values.get(field.name, field.default or '') }}"
-              {% if field.read_only %}disabled{% endif %} {% if field.required %}required{% endif %}></wa-input>
+    <label class="form-label" for="field-{{ field.name }}">{{ field.label }}</label>
+    <input type="date" class="form-control" id="field-{{ field.name }}"
+           name="{{ field.name }}" value="{{ values.get(field.name, field.default or '') }}"
+           {% if field.read_only %}disabled{% endif %} {% if field.required %}required{% endif %}>
+
     {% elif field.widget == "datetime" %}
-    <wa-input type="datetime-local" label="{{ field.label }}"
-              name="{{ field.name }}" value="{{ values.get(field.name, field.default or '') }}"
-              {% if field.read_only %}disabled{% endif %} {% if field.required %}required{% endif %}></wa-input>
+    <label class="form-label" for="field-{{ field.name }}">{{ field.label }}</label>
+    <input type="datetime-local" class="form-control" id="field-{{ field.name }}"
+           name="{{ field.name }}" value="{{ values.get(field.name, field.default or '') }}"
+           {% if field.read_only %}disabled{% endif %} {% if field.required %}required{% endif %}>
+
     {% elif field.widget == "multiselect" and field.relationship %}
     {% set current = values.get(field.name, []) | map('string') | list %}
     {% set select_id = "rel-" ~ field.name %}
-    <wa-select label="{{ field.label }}"
-               name="{{ field.name }}" multiple with-clear pill
-               id="{{ select_id }}"
-               {% if field.read_only %}disabled{% endif %}
-               max-options-visible="5"
-               placeholder="Select {{ field.label | lower }}...">
-        <wa-input slot="start" size="small" placeholder="Type to filter..." with-clear
-                  style="margin: 4px 8px; width: calc(100% - 16px);"
-                  name="q"
-                  hx-get="{{ base_path }}/{{ resource.id }}/options/{{ field.name }}"
-                  hx-trigger="input changed delay:300ms, load"
-                  hx-target="#{{ select_id }}-opts"
-                  hx-swap="innerHTML"
-                  hx-vals='js:{selected: (function(){var s=document.getElementById("{{ select_id }}");return s&&s.value?Array.from(s.value).join(","):"{{ current | join(',') }}"})()}'></wa-input>
-        <div id="{{ select_id }}-opts">
-            {% for value, label in field.enum_choices or [] %}
-            <wa-option value="{{ value }}" {% if value|string in current %}selected{% endif %}>{{ label }}</wa-option>
-            {% endfor %}
-        </div>
-    </wa-select>
+    <label class="form-label" for="{{ select_id }}">{{ field.label }}</label>
+    <select class="form-select" id="{{ select_id }}"
+            name="{{ field.name }}" multiple
+            {% if field.read_only %}disabled{% endif %}
+            data-ts-remote="{{ base_path }}/{{ resource.id }}/options/{{ field.name }}">
+        {% for value, label in field.enum_choices or [] %}
+        <option value="{{ value }}" {% if value|string in current %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+    </select>
+
     {% elif field.widget == "multiselect" %}
     {% set current = values.get(field.name, []) | map('string') | list %}
     {% set select_id = "ms-" ~ field.name %}
-    <wa-select label="{{ field.label }}"
-               name="{{ field.name }}" multiple with-clear pill
-               id="{{ select_id }}"
-               {% if field.read_only %}disabled{% endif %}
-               max-options-visible="5"
-               placeholder="Select {{ field.label | lower }}...">
-        <wa-input slot="start" size="small" placeholder="Type to filter..." with-clear
-                  style="margin: 4px 8px; width: calc(100% - 16px);"
-                  oninput="(function(el){var q=el.value.toLowerCase();el.closest('wa-select').querySelectorAll('wa-option').forEach(function(o){o.hidden=q&&o.textContent.toLowerCase().indexOf(q)<0})})(this)"></wa-input>
+    <label class="form-label" for="{{ select_id }}">{{ field.label }}</label>
+    <select class="form-select" id="{{ select_id }}"
+            name="{{ field.name }}" multiple
+            {% if field.read_only %}disabled{% endif %}
+            data-ts="true">
         {% if field.enum_choices %}
         {% for value, label in field.enum_choices %}
-        <wa-option value="{{ value }}" {% if value|string in current %}selected{% endif %}>{{ label }}</wa-option>
+        <option value="{{ value }}" {% if value|string in current %}selected{% endif %}>{{ label }}</option>
         {% endfor %}
         {% endif %}
-    </wa-select>
+    </select>
+
     {% elif field.widget == "select" %}
-    <wa-select label="{{ field.label }}"
-               name="{{ field.name }}"
-               {% if field.read_only %}disabled{% endif %} {% if field.required %}required{% endif %}
-               placeholder="Select...">
-        {% if not field.required %}<wa-option value="">Select...</wa-option>{% endif %}
+    <label class="form-label" for="field-{{ field.name }}">{{ field.label }}</label>
+    <select class="form-select" id="field-{{ field.name }}"
+            name="{{ field.name }}"
+            {% if field.read_only %}disabled{% endif %} {% if field.required %}required{% endif %}>
+        {% if not field.required %}<option value="">Select...</option>{% endif %}
         {% if field.enum_choices %}
         {% for value, label in field.enum_choices %}
-        <wa-option value="{{ value }}" {% if values.get(field.name) == value %}selected{% endif %}>{{ label }}</wa-option>
+        <option value="{{ value }}" {% if values.get(field.name) == value %}selected{% endif %}>{{ label }}</option>
         {% endfor %}
         {% endif %}
-    </wa-select>
+    </select>
+
     {% else %}
-    <wa-input type="text" label="{{ field.label }}"
-              name="{{ field.name }}" value="{{ values.get(field.name, field.default or '') }}"
-              {% if field.read_only %}disabled{% endif %} {% if field.required %}required{% endif %}
-              placeholder="Enter {{ field.label | lower }}..."></wa-input>
+    <label class="form-label" for="field-{{ field.name }}">{{ field.label }}</label>
+    <input type="text" class="form-control" id="field-{{ field.name }}"
+           name="{{ field.name }}" value="{{ values.get(field.name, field.default or '') }}"
+           {% if field.read_only %}disabled{% endif %} {% if field.required %}required{% endif %}
+           placeholder="Enter {{ field.label | lower }}...">
     {% endif %}
 </div>
