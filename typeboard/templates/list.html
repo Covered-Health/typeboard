@@ -48,29 +48,31 @@
     </form>
     {% endif %}
 
-    <table>
-        <thead>
-            <tr>
-                {% for col in resource.columns %}
-                {% if col.column and not col.hidden %}
-                <th>
-                    <a hx-get="{{ base_path }}/{{ resource.id }}/rows?sort={{ col.name }}" hx-target="#table-body" hx-swap="innerHTML">
-                        {{ col.label }}
-                    </a>
-                </th>
-                {% endif %}
-                {% endfor %}
-                {% if resource.delete_fn %}
-                <th style="text-align:right;">Actions</th>
-                {% endif %}
-            </tr>
-        </thead>
-        <tbody id="table-body"
-               hx-get="{{ base_path }}/{{ resource.id }}/rows"
-               hx-trigger="load"
-               hx-swap="innerHTML">
-            <tr><td colspan="100" class="empty-state">Loading...</td></tr>
-        </tbody>
-    </table>
+    <div class="table-scroll">
+        <table>
+            <thead>
+                <tr>
+                    {% for col in resource.columns %}
+                    {% if col.column and not col.hidden %}
+                    <th>
+                        <a hx-get="{{ base_path }}/{{ resource.id }}/rows?sort={{ col.name }}" hx-target="#table-body" hx-swap="innerHTML">
+                            {{ col.label }}
+                        </a>
+                    </th>
+                    {% endif %}
+                    {% endfor %}
+                    {% if resource.delete_fn %}
+                    <th style="text-align:right;">Actions</th>
+                    {% endif %}
+                </tr>
+            </thead>
+            <tbody id="table-body"
+                   hx-get="{{ base_path }}/{{ resource.id }}/rows"
+                   hx-trigger="load"
+                   hx-swap="innerHTML">
+                <tr><td colspan="100" class="empty-state">Loading...</td></tr>
+            </tbody>
+        </table>
+    </div>
 </div>
 {% endblock %}

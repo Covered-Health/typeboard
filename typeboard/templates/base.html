@@ -24,6 +24,7 @@
             background: var(--wa-color-neutral-95);
             color: var(--wa-color-neutral-15);
             display: flex;
+            flex-direction: column;
             min-height: 100vh;
             font-size: 14px;
             line-height: 1.5;
@@ -33,26 +34,27 @@
         a { color: var(--wa-color-brand-60); text-decoration: none; transition: color 150ms; }
         a:hover { color: var(--wa-color-brand-50); }
 
-        /* -- Sidebar -- */
-        nav.sidebar {
-            width: 240px;
-            min-width: 240px;
+        /* -- Top Header -- */
+        .top-header {
+            height: 52px;
+            min-height: 52px;
             background: var(--wa-color-neutral-100);
-            border-right: 1px solid var(--wa-color-neutral-85);
-            display: flex;
-            flex-direction: column;
-            position: sticky;
-            top: 0;
-            height: 100vh;
-            overflow-y: auto;
-        }
-        .sidebar-header {
-            padding: 20px 20px 16px;
+            border-bottom: 1px solid var(--wa-color-neutral-85);
             display: flex;
             align-items: center;
-            gap: 10px;
+            padding: 0 16px;
+            gap: 12px;
+            z-index: 100;
         }
-        .sidebar-header a {
+        .top-header .menu-toggle {
+            cursor: pointer;
+            color: var(--wa-color-neutral-40);
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+        }
+        .top-header .menu-toggle:hover { color: var(--wa-color-neutral-15); }
+        .top-header .header-logo a {
             color: var(--wa-color-neutral-15);
             font-weight: 600;
             font-size: 15px;
@@ -61,9 +63,36 @@
             align-items: center;
             gap: 10px;
         }
-        .sidebar-header img {
+        .top-header .header-logo img {
             height: {{ site.logo_height }};
             width: auto;
+        }
+
+        /* -- Layout -- */
+        .app-layout {
+            display: flex;
+            flex: 1;
+            min-height: 0;
+        }
+
+        /* -- Sidebar -- */
+        nav.sidebar {
+            width: 240px;
+            min-width: 240px;
+            background: var(--wa-color-neutral-100);
+            border-right: 1px solid var(--wa-color-neutral-85);
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - 52px);
+            overflow-y: auto;
+            position: sticky;
+            top: 52px;
+            transition: margin-left 200ms ease, opacity 200ms ease;
+        }
+        nav.sidebar.collapsed {
+            margin-left: -240px;
+            opacity: 0;
+            pointer-events: none;
         }
         .sidebar-nav { padding: 12px 8px; flex: 1; }
         .sidebar-nav ul { list-style: none; }
@@ -111,8 +140,7 @@
         main {
             flex: 1;
             padding: 32px 40px;
-            overflow-x: auto;
-            max-width: 1200px;
+            min-width: 0;
         }
 
         /* -- Page Header -- */
@@ -131,6 +159,10 @@
         .actions { display: flex; gap: 8px; align-items: center; }
 
         /* -- Table -- */
+        .table-scroll {
+            max-width: 100%;
+            overflow-x: auto;
+        }
         table {
             width: 100%;
             border-collapse: collapse;
@@ -152,7 +184,6 @@
             background: var(--wa-color-neutral-97);
             position: sticky;
             top: 0;
-            white-space: nowrap;
         }
         thead th a { color: var(--wa-color-neutral-50); }
         thead th a:hover { color: var(--wa-color-neutral-15); }
@@ -277,12 +308,25 @@
                 bar.classList.remove('active');
             });
         });
+        function toggleSidebar() {
+            var sidebar = document.querySelector('nav.sidebar');
+            sidebar.classList.toggle('collapsed');
+            localStorage.setItem('sidebar_collapsed', sidebar.classList.contains('collapsed'));
+        }
+        document.addEventListener('DOMContentLoaded', function() {
+            if (localStorage.getItem('sidebar_collapsed') === 'true') {
+                document.querySelector('nav.sidebar').classList.add('collapsed');
+            }
+        });
     </script>
 </head>
 <body class="wa-{{ site.theme.mode }}">
     <div id="loading-bar"><wa-progress-bar indeterminate></wa-progress-bar></div>
-    <nav class="sidebar">
-        <div class="sidebar-header">
+    <header class="top-header">
+        <span class="menu-toggle" onclick="toggleSidebar()">
+            <wa-icon name="bars"></wa-icon>
+        </span>
+        <div class="header-logo">
             <a href="{{ base_path }}/">
                 {% if site.logo_url %}
                 <img src="{% if site.logo_url.startswith('/') %}{{ base_path }}{{ site.logo_url }}{% else %}{{ site.logo_url }}{% endif %}" alt="{{ site.title }}">
@@ -291,28 +335,31 @@
                 {% endif %}
             </a>
         </div>
-        <wa-divider></wa-divider>
-        <div class="sidebar-nav">
-            {% for section_name, resource_names in site.sidebar_sections %}
-            {% if section_name %}
-            <div class="sidebar-section-label">{{ section_name }}</div>
-            {% endif %}
-            <ul>
-                {% for name in resource_names %}
-                <li>
-                    <a href="{{ base_path }}/{{ name }}/"
-                       {% if resource is defined and resource.id == name %}class="active"{% endif %}>
-                        {% if resource is defined and resource.id == name %}{% else %}<span style="width:11px;display:inline-block;"></span>{% endif %}
-                        {{ site.resources[name].label }}
-                    </a>
-                </li>
+    </header>
+    <div class="app-layout">
+        <nav class="sidebar">
+            <div class="sidebar-nav">
+                {% for section_name, resource_names in site.sidebar_sections %}
+                {% if section_name %}
+                <div class="sidebar-section-label">{{ section_name }}</div>
+                {% endif %}
+                <ul>
+                    {% for name in resource_names %}
+                    <li>
+                        <a href="{{ base_path }}/{{ name }}/"
+                           {% if resource is defined and resource.id == name %}class="active"{% endif %}>
+                            {% if resource is defined and resource.id == name %}{% else %}<span style="width:11px;display:inline-block;"></span>{% endif %}
+                            {{ site.resources[name].label }}
+                        </a>
+                    </li>
+                    {% endfor %}
+                </ul>
                 {% endfor %}
-            </ul>
-            {% endfor %}
-        </div>
-    </nav>
-    <main>
-        {% block content %}{% endblock %}
-    </main>
+            </div>
+        </nav>
+        <main>
+            {% block content %}{% endblock %}
+        </main>
+    </div>
 </body>
 </html>
