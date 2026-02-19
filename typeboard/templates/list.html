@@ -1,68 +1,73 @@
 {% extends "base.html" %}
 {% block content %}
 <div class="fade-in">
-    <div class="page-header">
-        <h1>{{ resource.label }}</h1>
-        <div class="actions">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="fs-4 fw-semibold mb-0">{{ resource.label }}</h1>
+        <div class="d-flex gap-2 align-items-center">
             {% if resource.create_fn %}
-            <wa-button variant="brand" href="{{ base_path }}/{{ resource.id }}/new">
-                <wa-icon slot="start" name="plus"></wa-icon>
+            <a class="btn btn-primary btn-sm" href="{{ base_path }}/{{ resource.id }}/new">
+                <i class="fa-solid fa-plus me-1"></i>
                 New
-            </wa-button>
+            </a>
             {% endif %}
         </div>
     </div>
 
     {% if resource.filter_fields %}
-    <form class="filters" hx-get="{{ base_path }}/{{ resource.id }}/rows" hx-target="#table-body" hx-trigger="submit" hx-swap="innerHTML">
+    <form class="d-flex flex-wrap gap-2 mb-3 align-items-end"
+          hx-get="{{ base_path }}/{{ resource.id }}/rows" hx-target="#table-body" hx-trigger="submit" hx-swap="innerHTML">
         {% for field in resource.filter_fields %}
         <div>
             {% if field.filter == "search" %}
-            <wa-input type="search" name="{{ field.name }}" placeholder="Search {{ field.label | lower }}..." size="small" with-clear
-                      hx-get="{{ base_path }}/{{ resource.id }}/rows"
-                      hx-target="#table-body" hx-swap="innerHTML"
-                      hx-trigger="input changed delay:300ms, wa-clear"
-                      hx-include="closest form"></wa-input>
+            <input type="search" class="form-control form-control-sm" name="{{ field.name }}"
+                   placeholder="Search {{ field.label | lower }}..."
+                   hx-get="{{ base_path }}/{{ resource.id }}/rows"
+                   hx-target="#table-body" hx-swap="innerHTML"
+                   hx-trigger="input changed delay:300ms, search"
+                   hx-include="closest form">
             {% elif field.filter == "select" %}
-            <wa-select name="{{ field.name }}" placeholder="All {{ field.label | lower }}" size="small"
-                       hx-get="{{ base_path }}/{{ resource.id }}/rows"
-                       hx-target="#table-body" hx-swap="innerHTML"
-                       hx-trigger="wa-change"
-                       hx-include="closest form">
-                <wa-option value="">All</wa-option>
+            <select class="form-select form-select-sm" name="{{ field.name }}"
+                    hx-get="{{ base_path }}/{{ resource.id }}/rows"
+                    hx-target="#table-body" hx-swap="innerHTML"
+                    hx-trigger="change"
+                    hx-include="closest form">
+                <option value="">All {{ field.label | lower }}</option>
                 {% if field.enum_choices %}
                 {% for value, label in field.enum_choices %}
-                <wa-option value="{{ value }}">{{ label }}</wa-option>
+                <option value="{{ value }}">{{ label }}</option>
                 {% endfor %}
                 {% endif %}
-            </wa-select>
+            </select>
             {% else %}
-            <wa-input type="text" name="{{ field.name }}" placeholder="{{ field.label }}" size="small"
-                      hx-get="{{ base_path }}/{{ resource.id }}/rows"
-                      hx-target="#table-body" hx-swap="innerHTML"
-                      hx-trigger="input changed delay:300ms"
-                      hx-include="closest form"></wa-input>
+            <input type="text" class="form-control form-control-sm" name="{{ field.name }}"
+                   placeholder="{{ field.label }}"
+                   hx-get="{{ base_path }}/{{ resource.id }}/rows"
+                   hx-target="#table-body" hx-swap="innerHTML"
+                   hx-trigger="input changed delay:300ms"
+                   hx-include="closest form">
             {% endif %}
         </div>
         {% endfor %}
     </form>
     {% endif %}
 
-    <div class="table-scroll">
-        <table>
+    <div class="table-responsive">
+        <table class="table table-striped table-hover table-sm">
             <thead>
                 <tr>
                     {% for col in resource.columns %}
                     {% if col.column and not col.hidden %}
                     <th>
-                        <a hx-get="{{ base_path }}/{{ resource.id }}/rows?sort={{ col.name }}" hx-target="#table-body" hx-swap="innerHTML">
+                        <a href="#" class="text-decoration-none text-body-secondary"
+                           hx-get="{{ base_path }}/{{ resource.id }}/rows?sort={{ col.name }}"
+                           hx-target="#table-body" hx-swap="innerHTML">
                             {{ col.label }}
                         </a>
                     </th>
                     {% endif %}
                     {% endfor %}
                     {% if resource.delete_fn %}
-                    <th style="text-align:right;">Actions</th>
+                    <th class="text-end">Actions</th>
                     {% endif %}
                 </tr>
             </thead>
@@ -70,7 +75,7 @@
                    hx-get="{{ base_path }}/{{ resource.id }}/rows"
                    hx-trigger="load"
                    hx-swap="innerHTML">
-                <tr><td colspan="100" class="empty-state">Loading...</td></tr>
+                <tr><td colspan="100" class="text-center text-body-secondary p-5">Loading...</td></tr>
             </tbody>
         </table>
     </div>
