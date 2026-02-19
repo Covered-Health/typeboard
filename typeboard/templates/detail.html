@@ -34,15 +34,26 @@
             <dt>{{ col.label }}</dt>
             <dd>
                 {% set val = item_value(item, col.name) %}
+                {% set rel_target = relationship_targets.get(col.name) if relationship_targets is defined else None %}
                 {% if val is iterable and val is not string and val is not mapping %}
                 <div style="display:flex;gap:4px;flex-wrap:wrap;">
                     {% for v in val %}
+                    {% if rel_target and v is iterable and v is not string %}
+                    <a href="{{ base_path }}/{{ rel_target }}/{{ v[0] }}" style="text-decoration:none;">
+                        <wa-tag size="small" variant="neutral" pill style="padding:0 6px;cursor:pointer;">{{ v[1] }}</wa-tag>
+                    </a>
+                    {% else %}
                     <wa-tag size="small" variant="neutral" pill style="padding:0 6px;">{{ v }}</wa-tag>
+                    {% endif %}
                     {% endfor %}
                     {% if not val %}<span style="color:var(--wa-color-neutral-50);">None</span>{% endif %}
                 </div>
                 {% else %}
+                {% if rel_target and val is iterable and val is not string %}
+                <a href="{{ base_path }}/{{ rel_target }}/{{ val[0] }}">{{ val[1] }}</a>
+                {% else %}
                 {{ val }}
+                {% endif %}
                 {% endif %}
             </dd>
             {% endif %}

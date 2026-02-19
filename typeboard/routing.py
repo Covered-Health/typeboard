@@ -211,11 +211,16 @@ def _collect_relationship_deps(fields: list[FieldInfo], site) -> list[DependsPar
     return result
 
 
-def _resolve_detail_relationships(item, fields: list[FieldInfo], site, di_kwargs: dict) -> Any:
-    """Replace relationship ID fields with display names for the detail view."""
+def _resolve_detail_relationships(item, fields: list[FieldInfo], site, di_kwargs: dict) -> tuple[Any, dict[str, str]]:
+    """Replace relationship ID fields with (id, label) tuples for the detail view.
+
+    Returns the modified item and a dict mapping field names to target resource names
+    (for building links in the template).
+    """
     from typeboard.pagination import Page
 
     modifications = {}
+    relationship_targets: dict[str, str] = {}
     for f in fields:
         if not f.relationship:
             continue
@@ -229,6 +234,7 @@ def _resolve_detail_relationships(item, fields: list[FieldInfo], site, di_kwargs
             continue
 
         display = target.display_name_field
+        relationship_targets[f.name] = f.relationship
 
         # Fetch items from target resource
         sig = inspect.signature(target.list_fn)
@@ -241,34 +247,34 @@ def _resolve_detail_relationships(item, fields: list[FieldInfo], site, di_kwargs
         result = target.list_fn(**call_kwargs)
         items = result.items if isinstance(result, Page) else (result if isinstance(result, list) else [])
 
-        # Build ID → display name map
+        # Build ID → (id, label) map
         id_map = {}
         for t in items:
             t_id = t.get("id") if isinstance(t, dict) else getattr(t, "id", None)
             t_label = t.get(display) if isinstance(t, dict) else getattr(t, display, None)
-            id_map[t_id] = str(t_label)
+            id_map[t_id] = (t_id, str(t_label))
 
-        # Replace IDs with names
+        # Replace IDs with (id, label) tuples
         if isinstance(ids, list):
-            modifications[f.name] = [id_map.get(i, str(i)) for i in ids]
+            modifications[f.name] = [id_map.get(i, (i, str(i))) for i in ids]
         else:
-            modifications[f.name] = id_map.get(ids, str(ids))
+            modifications[f.name] = id_map.get(ids, (ids, str(ids)))
 
     if not modifications:
-        return item
+        return item, relationship_targets
 
     # Create a dict copy with modifications
     if isinstance(item, dict):
-        return {**item, **modifications}
+        return {**item, **modifications}, relationship_targets
     if hasattr(item, "model_dump"):
         data = item.model_dump()
         data.update(modifications)
-        return data
+        return data, relationship_targets
     import copy
     new_item = copy.copy(item)
     for k, v in modifications.items():
         setattr(new_item, k, v)
-    return new_item
+    return new_item, relationship_targets
 
 
 def _register_options_endpoints(router: APIRouter, resource: Resource, site, render) -> None:
@@ -537,10 +543,11 @@ def build_resource_router(resource: Resource, render, site=None) -> APIRouter:
             display_field = _res.display_name_field
             display_name = (item.get(display_field) if isinstance(item, dict) else getattr(item, display_field, None)) if item else None
             # Resolve relationship IDs to display names
+            relationship_targets = {}
             if _site:
                 all_di = {dp.name: kwargs[dp.name] for dp in _all_deps if dp.name in kwargs}
-                item = _resolve_detail_relationships(item, _res.detail_fields, _site, all_di)
-            return render("detail.html", resource=_res, request=request, id=id, item=item, columns=_res.detail_fields, display_name=display_name)
+                item, relationship_targets = _resolve_detail_relationships(item, _res.detail_fields, _site, all_di)
+            return render("detail.html", resource=_res, request=request, id=id, item=item, columns=_res.detail_fields, display_name=display_name, relationship_targets=relationship_targets)
 
         _inject_depends(detail_page, detail_deps)
         router.add_api_route("/{id}", detail_page, methods=["GET"], response_class=HTMLResponse)
