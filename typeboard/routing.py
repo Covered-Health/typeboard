@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any, get_args, get_origin
 
 from fastapi import APIRouter, Depends, FastAPI, Request
-from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse
 
 from typeboard.fields import FieldInfo, unwrap_annotated
 from typeboard.introspection import (
@@ -336,15 +336,13 @@ def _register_options_endpoints(router: APIRouter, resource: Resource, site, ren
             result = _list_fn(**valid_kwargs)
             items = result.items if isinstance(result, Page) else (result if isinstance(result, list) else [])
 
-            # Build option HTML
-            html_parts = []
+            # Build JSON response
+            results = []
             seen_ids: set[str] = set()
             for item in items:
                 item_id = str(item.get(_id_field) if isinstance(item, dict) else getattr(item, _id_field, ""))
                 item_label = str(item.get(_display) if isinstance(item, dict) else getattr(item, _display, ""))
-                is_selected = item_id in selected_ids
-                sel = " selected" if is_selected else ""
-                html_parts.append(f'<wa-option value="{item_id}"{sel}>{item_label}</wa-option>')
+                results.append({"value": item_id, "text": item_label})
                 seen_ids.add(item_id)
 
             # Fetch any selected items not in search results
@@ -360,18 +358,18 @@ def _register_options_endpoints(router: APIRouter, resource: Resource, site, ren
                         sel_item = _target.get_fn(**valid_get)
                         if sel_item:
                             item_label = str(sel_item.get(_display) if isinstance(sel_item, dict) else getattr(sel_item, _display, ""))
-                            html_parts.insert(0, f'<wa-option value="{mid}" selected>{item_label}</wa-option>')
+                            results.insert(0, {"value": mid, "text": item_label})
                     except Exception:
-                        html_parts.insert(0, f'<wa-option value="{mid}" selected>{mid}</wa-option>')
+                        results.insert(0, {"value": mid, "text": mid})
 
-            return HTMLResponse(content="\n".join(html_parts))
+            return JSONResponse(content=results)
 
         _inject_depends(options_handler, target_deps)
         router.add_api_route(
             f"/options/{rel_field.name}",
             options_handler,
             methods=["GET"],
-            response_class=HTMLResponse,
+            response_class=JSONResponse,
         )
 
 
