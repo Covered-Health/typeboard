@@ -397,12 +397,16 @@ def build_resource_router(resource: Resource, render, site=None) -> APIRouter:
         async def list_page(request: Request, _res=resource):
             return render("list.html", resource=_res, request=request)
 
+        _native_pagination = page_param is not None
+
         async def rows(request: Request, _res=resource, _deps=list_deps,
-                       _page_p=page_param, _ps_p=page_size_param, _sort_p=sort_param, **kwargs):
+                       _page_p=page_param, _ps_p=page_size_param, _sort_p=sort_param,
+                       _native_pag=_native_pagination, **kwargs):
             from typeboard.pagination import Page
 
+            default_page_size = 25 if _native_pag else 1000
             page = int(request.query_params.get("page", "1"))
-            page_size = int(request.query_params.get("page_size", "25"))
+            page_size = int(request.query_params.get("page_size", str(default_page_size)))
             sort = request.query_params.get("sort")
 
             fn_kwargs: dict[str, Any] = {}
@@ -412,7 +416,7 @@ def build_resource_router(resource: Resource, render, site=None) -> APIRouter:
                 if dp.name in kwargs:
                     fn_kwargs[dp.name] = kwargs[dp.name]
 
-            # Pagination
+            # Pagination (only if function supports it natively)
             if _page_p:
                 fn_kwargs[_page_p] = page
             if _ps_p:
@@ -439,7 +443,11 @@ def build_resource_router(resource: Resource, render, site=None) -> APIRouter:
                 items = result.items
                 page_info = result
             elif isinstance(result, list):
-                items = result
+                # Server-side pagination for functions that don't paginate
+                total = len(result)
+                start = (page - 1) * page_size
+                items = result[start:start + page_size]
+                page_info = Page(items=items, total=total, page=page, page_size=page_size)
 
             return render(
                 "_table_rows.html",

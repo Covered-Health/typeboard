@@ -151,18 +151,26 @@ def extract_page_item_type(return_type) -> type | None:
 
 
 def extract_columns(fn) -> list[FieldInfo]:
-    """Extract column FieldInfo from a list function's Page[T] return type."""
+    """Extract column FieldInfo from a list function's return type.
+
+    Supports Page[T], list[T], and direct model return types.
+    """
     rt = extract_return_type(fn)
     if rt is None:
         return []
+    # Page[T]
     item_type = extract_page_item_type(rt)
-    if item_type is None:
-        # Maybe it's a direct model
-        if isinstance(rt, type) and issubclass(rt, BaseModel):
-            return extract_fields_from_model(rt)
-        return []
-    if isinstance(item_type, type) and issubclass(item_type, BaseModel):
+    if item_type and isinstance(item_type, type) and issubclass(item_type, BaseModel):
         return extract_fields_from_model(item_type)
+    # list[T]
+    origin = get_origin(rt)
+    if origin is list:
+        args = get_args(rt)
+        if args and isinstance(args[0], type) and issubclass(args[0], BaseModel):
+            return extract_fields_from_model(args[0])
+    # Direct model
+    if isinstance(rt, type) and issubclass(rt, BaseModel):
+        return extract_fields_from_model(rt)
     return []
 
 
