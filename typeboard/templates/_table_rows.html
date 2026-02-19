@@ -3,7 +3,7 @@
 <tr class="fade-in"
     {% if resource.get_fn %}
     style="cursor:pointer;"
-    onclick="window.location='{{ base_path }}/{{ resource.name }}/{{ item_id(item) }}'"
+    onclick="window.location='{{ base_path }}/{{ resource.name }}/{{ item_id(item, resource.id_param_name) }}'"
     {% endif %}>
     {% for col in columns %}
     {% if col.column and not col.hidden %}
@@ -13,7 +13,7 @@
     {% if resource.delete_fn %}
     <td style="text-align:right;" onclick="event.stopPropagation()">
         <wa-button size="small" variant="danger" appearance="outlined"
-                hx-delete="{{ base_path }}/{{ resource.name }}/{{ item_id(item) }}"
+                hx-delete="{{ base_path }}/{{ resource.name }}/{{ item_id(item, resource.id_param_name) }}"
                 hx-confirm="Are you sure you want to delete this record?"
                 hx-target="closest tr"
                 hx-swap="outerHTML">

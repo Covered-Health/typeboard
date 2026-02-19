@@ -18,7 +18,11 @@ def create_renderer(site):
             return item.get(field_name, "")
         return getattr(item, field_name, "")
 
-    def item_id(item):
+    def item_id(item, field_name=None):
+        if field_name:
+            if isinstance(item, dict):
+                return item.get(field_name, "")
+            return getattr(item, field_name, "")
         if isinstance(item, dict):
             return item.get("id", item.get("pk", ""))
         return getattr(item, "id", getattr(item, "pk", ""))
