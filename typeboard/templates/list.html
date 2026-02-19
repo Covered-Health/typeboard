@@ -18,9 +18,17 @@
         {% for field in resource.filter_fields %}
         <div>
             {% if field.filter == "search" %}
-            <wa-input type="search" name="{{ field.name }}" placeholder="Search {{ field.label | lower }}..." size="small" with-clear></wa-input>
+            <wa-input type="search" name="{{ field.name }}" placeholder="Search {{ field.label | lower }}..." size="small" with-clear
+                      hx-get="{{ base_path }}/{{ resource.name }}/rows"
+                      hx-target="#table-body" hx-swap="innerHTML"
+                      hx-trigger="input changed delay:300ms, wa-clear"
+                      hx-include="closest form"></wa-input>
             {% elif field.filter == "select" %}
-            <wa-select name="{{ field.name }}" placeholder="All {{ field.label | lower }}" size="small">
+            <wa-select name="{{ field.name }}" placeholder="All {{ field.label | lower }}" size="small"
+                       hx-get="{{ base_path }}/{{ resource.name }}/rows"
+                       hx-target="#table-body" hx-swap="innerHTML"
+                       hx-trigger="wa-change"
+                       hx-include="closest form">
                 <wa-option value="">All</wa-option>
                 {% if field.enum_choices %}
                 {% for value, label in field.enum_choices %}
@@ -29,14 +37,14 @@
                 {% endif %}
             </wa-select>
             {% else %}
-            <wa-input type="text" name="{{ field.name }}" placeholder="{{ field.label }}" size="small"></wa-input>
+            <wa-input type="text" name="{{ field.name }}" placeholder="{{ field.label }}" size="small"
+                      hx-get="{{ base_path }}/{{ resource.name }}/rows"
+                      hx-target="#table-body" hx-swap="innerHTML"
+                      hx-trigger="input changed delay:300ms"
+                      hx-include="closest form"></wa-input>
             {% endif %}
         </div>
         {% endfor %}
-        <wa-button type="submit" appearance="outlined" size="small">
-            <wa-icon slot="start" name="magnifying-glass"></wa-icon>
-            Filter
-        </wa-button>
     </form>
     {% endif %}
 

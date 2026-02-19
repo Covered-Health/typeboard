@@ -5,11 +5,11 @@
         {% if resource.list_fn %}
         <wa-breadcrumb-item href="{{ base_path }}/{{ resource.name }}/">{{ resource.name | replace("_", " ") | title }}</wa-breadcrumb-item>
         {% endif %}
-        <wa-breadcrumb-item>#{{ id }}</wa-breadcrumb-item>
+        <wa-breadcrumb-item>{{ display_name or id }}</wa-breadcrumb-item>
     </wa-breadcrumb>
 
     <div class="page-header">
-        <h1>{{ resource.name | replace("_", " ") | title }} #{{ id }}</h1>
+        <h1>{{ display_name or (resource.name | replace("_", " ") | title ~ " #" ~ id) }}</h1>
         <div class="actions">
             {% if resource.update_fn %}
             <wa-button variant="brand" href="{{ base_path }}/{{ resource.name }}/{{ id }}/edit">

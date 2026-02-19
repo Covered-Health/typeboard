@@ -534,11 +534,13 @@ def build_resource_router(resource: Resource, render, site=None) -> APIRouter:
             fn_kwargs = {dp.name: kwargs[dp.name] for dp in _deps if dp.name in kwargs}
             fn_kwargs[_id_p or "id"] = coerced_id
             item = _res.get_fn(**fn_kwargs)
+            display_field = _res.display_name_field
+            display_name = (item.get(display_field) if isinstance(item, dict) else getattr(item, display_field, None)) if item else None
             # Resolve relationship IDs to display names
             if _site:
                 all_di = {dp.name: kwargs[dp.name] for dp in _all_deps if dp.name in kwargs}
                 item = _resolve_detail_relationships(item, _res.detail_fields, _site, all_di)
-            return render("detail.html", resource=_res, request=request, id=id, item=item, columns=_res.detail_fields)
+            return render("detail.html", resource=_res, request=request, id=id, item=item, columns=_res.detail_fields, display_name=display_name)
 
         _inject_depends(detail_page, detail_deps)
         router.add_api_route("/{id}", detail_page, methods=["GET"], response_class=HTMLResponse)
@@ -561,6 +563,8 @@ def build_resource_router(resource: Resource, render, site=None) -> APIRouter:
             coerced_id = _coerce_id(id, _res.get_fn, _id_p) if _res.get_fn else int(id)
             fn_kwargs[_id_p or "id"] = coerced_id
             item = _res.get_fn(**fn_kwargs) if _res.get_fn else None
+            display_field = _res.display_name_field
+            display_name = (item.get(display_field) if isinstance(item, dict) else getattr(item, display_field, None)) if item else None
             fields = _res.update_fields
             di_kwargs = {dp.name: kwargs[dp.name] for dp in _deps if dp.name in kwargs}
             _resolve_choices(fields, di_kwargs)
@@ -571,7 +575,7 @@ def build_resource_router(resource: Resource, render, site=None) -> APIRouter:
                         values[f.name] = item.get(f.name, f.default)
                     else:
                         values[f.name] = getattr(item, f.name, f.default)
-            return render("form.html", resource=_res, request=request, mode="edit", id=id, fields=fields, values=values, errors=[])
+            return render("form.html", resource=_res, request=request, mode="edit", id=id, fields=fields, values=values, errors=[], display_name=display_name)
 
         _inject_depends(edit_form, edit_form_deps)
 
