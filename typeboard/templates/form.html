@@ -1,45 +1,49 @@
 {% extends "base.html" %}
 {% block content %}
 <div class="fade-in">
-    <wa-breadcrumb>
-        {% if resource.list_fn %}
-        <wa-breadcrumb-item href="{{ base_path }}/{{ resource.id }}/">{{ resource.label }}</wa-breadcrumb-item>
-        {% endif %}
-        <wa-breadcrumb-item>{% if mode == "create" %}New{% else %}Edit {{ display_name or id }}{% endif %}</wa-breadcrumb-item>
-    </wa-breadcrumb>
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            {% if resource.list_fn %}
+            <li class="breadcrumb-item"><a href="{{ base_path }}/{{ resource.id }}/">{{ resource.label }}</a></li>
+            {% endif %}
+            <li class="breadcrumb-item active" aria-current="page">{% if mode == "create" %}New{% else %}Edit {{ display_name or id }}{% endif %}</li>
+        </ol>
+    </nav>
 
-    <div class="page-header">
-        <h1>{% if mode == "create" %}New {{ resource.label }}{% else %}Edit {{ display_name or (resource.label ~ " #" ~ id) }}{% endif %}</h1>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="fs-4 fw-semibold mb-0">{% if mode == "create" %}New {{ resource.label }}{% else %}Edit {{ display_name or (resource.label ~ " #" ~ id) }}{% endif %}</h1>
     </div>
 
     {% if errors %}
-    <wa-callout variant="danger" style="margin-bottom: 20px;">
+    <div class="alert alert-danger mb-3">
         {% for error in errors %}
         <div>{{ error }}</div>
         {% endfor %}
-    </wa-callout>
+    </div>
     {% endif %}
 
-    <wa-card>
-        <div class="form-container">
-            <form method="post">
-                {% for field in fields %}
-                {% if not field.hidden %}
-                {% include "_field.html" %}
-                {% endif %}
-                {% endfor %}
-
-                <div class="form-actions">
-                    <wa-button variant="brand" type="submit">
-                        <wa-icon slot="start" name="{% if mode == 'create' %}plus{% else %}floppy-disk{% endif %}"></wa-icon>
-                        {% if mode == "create" %}Create{% else %}Save changes{% endif %}
-                    </wa-button>
-                    {% if resource.list_fn %}
-                    <wa-button appearance="outlined" href="{{ base_path }}/{{ resource.id }}/">Cancel</wa-button>
+    <div class="card">
+        <div class="card-body">
+            <div style="max-width: 560px;">
+                <form method="post">
+                    {% for field in fields %}
+                    {% if not field.hidden %}
+                    {% include "_field.html" %}
                     {% endif %}
-                </div>
-            </form>
+                    {% endfor %}
+
+                    <div class="d-flex gap-2 mt-4">
+                        <button class="btn btn-primary" type="submit">
+                            <i class="fa-solid fa-{% if mode == 'create' %}plus{% else %}floppy-disk{% endif %} me-1"></i>
+                            {% if mode == "create" %}Create{% else %}Save changes{% endif %}
+                        </button>
+                        {% if resource.list_fn %}
+                        <a class="btn btn-outline-secondary" href="{{ base_path }}/{{ resource.id }}/">Cancel</a>
+                        {% endif %}
+                    </div>
+                </form>
+            </div>
         </div>
-    </wa-card>
+    </div>
 </div>
 {% endblock %}
