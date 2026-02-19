@@ -1,67 +1,71 @@
 {% extends "base.html" %}
 {% block content %}
 <div class="fade-in">
-    <wa-breadcrumb>
-        {% if resource.list_fn %}
-        <wa-breadcrumb-item href="{{ base_path }}/{{ resource.id }}/">{{ resource.label }}</wa-breadcrumb-item>
-        {% endif %}
-        <wa-breadcrumb-item>{{ display_name or id }}</wa-breadcrumb-item>
-    </wa-breadcrumb>
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            {% if resource.list_fn %}
+            <li class="breadcrumb-item"><a href="{{ base_path }}/{{ resource.id }}/">{{ resource.label }}</a></li>
+            {% endif %}
+            <li class="breadcrumb-item active" aria-current="page">{{ display_name or id }}</li>
+        </ol>
+    </nav>
 
-    <div class="page-header">
-        <h1>{{ display_name or (resource.label ~ " #" ~ id) }}</h1>
-        <div class="actions">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="fs-4 fw-semibold mb-0">{{ display_name or (resource.label ~ " #" ~ id) }}</h1>
+        <div class="d-flex gap-2 align-items-center">
             {% if resource.update_fn %}
-            <wa-button variant="brand" href="{{ base_path }}/{{ resource.id }}/{{ id }}/edit">
-                <wa-icon slot="start" name="pen"></wa-icon>
+            <a class="btn btn-primary btn-sm" href="{{ base_path }}/{{ resource.id }}/{{ id }}/edit">
+                <i class="fa-solid fa-pen me-1"></i>
                 Edit
-            </wa-button>
+            </a>
             {% endif %}
             {% if resource.list_fn %}
-            <wa-button appearance="outlined" href="{{ base_path }}/{{ resource.id }}/">
-                <wa-icon slot="start" name="arrow-left"></wa-icon>
+            <a class="btn btn-outline-secondary btn-sm" href="{{ base_path }}/{{ resource.id }}/">
+                <i class="fa-solid fa-arrow-left me-1"></i>
                 Back to list
-            </wa-button>
+            </a>
             {% endif %}
         </div>
     </div>
 
     {% if item %}
-    <wa-card>
-        <dl class="detail-grid">
-            {% for col in columns %}
-            {% if not col.hidden %}
-            <dt>{{ col.label }}</dt>
-            <dd>
-                {% set val = item_value(item, col.name) %}
-                {% set rel_target = relationship_targets.get(col.name) if relationship_targets is defined else None %}
-                {% if val is iterable and val is not string and val is not mapping %}
-                <div style="display:flex;gap:4px;flex-wrap:wrap;">
-                    {% for v in val %}
-                    {% if rel_target and v is iterable and v is not string %}
-                    <a href="{{ base_path }}/{{ rel_target }}/{{ v[0] }}" style="text-decoration:none;">
-                        <wa-tag size="small" variant="neutral" pill style="padding:0 6px;cursor:pointer;">{{ v[1] }}</wa-tag>
-                    </a>
+    <div class="card">
+        <div class="card-body">
+            <dl class="detail-grid">
+                {% for col in columns %}
+                {% if not col.hidden %}
+                <dt>{{ col.label }}</dt>
+                <dd>
+                    {% set val = item_value(item, col.name) %}
+                    {% set rel_target = relationship_targets.get(col.name) if relationship_targets is defined else None %}
+                    {% if val is iterable and val is not string and val is not mapping %}
+                    <div class="d-flex gap-1 flex-wrap">
+                        {% for v in val %}
+                        {% if rel_target and v is iterable and v is not string %}
+                        <a href="{{ base_path }}/{{ rel_target }}/{{ v[0] }}" class="text-decoration-none">
+                            <span class="badge text-bg-secondary rounded-pill">{{ v[1] }}</span>
+                        </a>
+                        {% else %}
+                        <span class="badge text-bg-secondary rounded-pill">{{ v }}</span>
+                        {% endif %}
+                        {% endfor %}
+                        {% if not val %}<span class="text-body-secondary">None</span>{% endif %}
+                    </div>
                     {% else %}
-                    <wa-tag size="small" variant="neutral" pill style="padding:0 6px;">{{ v }}</wa-tag>
+                    {% if rel_target and val is iterable and val is not string %}
+                    <a href="{{ base_path }}/{{ rel_target }}/{{ val[0] }}">{{ val[1] }}</a>
+                    {% else %}
+                    {{ val }}
                     {% endif %}
-                    {% endfor %}
-                    {% if not val %}<span style="color:var(--wa-color-neutral-50);">None</span>{% endif %}
-                </div>
-                {% else %}
-                {% if rel_target and val is iterable and val is not string %}
-                <a href="{{ base_path }}/{{ rel_target }}/{{ val[0] }}">{{ val[1] }}</a>
-                {% else %}
-                {{ val }}
+                    {% endif %}
+                </dd>
                 {% endif %}
-                {% endif %}
-            </dd>
-            {% endif %}
-            {% endfor %}
-        </dl>
-    </wa-card>
+                {% endfor %}
+            </dl>
+        </div>
+    </div>
     {% else %}
-    <div class="empty-state">Record not found.</div>
+    <div class="text-center text-body-secondary p-5">Record not found.</div>
     {% endif %}
 </div>
 {% endblock %}
