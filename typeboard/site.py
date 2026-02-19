@@ -32,8 +32,9 @@ class AdminSite:
 
     def resource(
         self,
-        name: str,
+        id: str,
         *,
+        label: str = "",
         list: Callable | None = None,
         get: Callable | None = None,
         create: Callable | None = None,
@@ -41,18 +42,19 @@ class AdminSite:
         delete: Callable | None = None,
     ) -> Resource:
         res = Resource(
-            name=name,
+            id=id,
+            label=label,
             list_fn=list,
             get_fn=get,
             create_fn=create,
             update_fn=update,
             delete_fn=delete,
         )
-        self.resources[name] = res
+        self.resources[id] = res
         # Place in the current section (or a default sectionless group)
         if not self._sections or self._sections[-1][0] != self._current_section:
             self._sections.append((self._current_section, []))
-        self._sections[-1][1].append(name)
+        self._sections[-1][1].append(id)
         return res
 
     @property

@@ -2,10 +2,10 @@
 {% block content %}
 <div class="fade-in">
     <div class="page-header">
-        <h1>{{ resource.name | replace("_", " ") | title }}</h1>
+        <h1>{{ resource.label }}</h1>
         <div class="actions">
             {% if resource.create_fn %}
-            <wa-button variant="brand" href="{{ base_path }}/{{ resource.name }}/new">
+            <wa-button variant="brand" href="{{ base_path }}/{{ resource.id }}/new">
                 <wa-icon slot="start" name="plus"></wa-icon>
                 New
             </wa-button>
@@ -14,18 +14,18 @@
     </div>
 
     {% if resource.filter_fields %}
-    <form class="filters" hx-get="{{ base_path }}/{{ resource.name }}/rows" hx-target="#table-body" hx-trigger="submit" hx-swap="innerHTML">
+    <form class="filters" hx-get="{{ base_path }}/{{ resource.id }}/rows" hx-target="#table-body" hx-trigger="submit" hx-swap="innerHTML">
         {% for field in resource.filter_fields %}
         <div>
             {% if field.filter == "search" %}
             <wa-input type="search" name="{{ field.name }}" placeholder="Search {{ field.label | lower }}..." size="small" with-clear
-                      hx-get="{{ base_path }}/{{ resource.name }}/rows"
+                      hx-get="{{ base_path }}/{{ resource.id }}/rows"
                       hx-target="#table-body" hx-swap="innerHTML"
                       hx-trigger="input changed delay:300ms, wa-clear"
                       hx-include="closest form"></wa-input>
             {% elif field.filter == "select" %}
             <wa-select name="{{ field.name }}" placeholder="All {{ field.label | lower }}" size="small"
-                       hx-get="{{ base_path }}/{{ resource.name }}/rows"
+                       hx-get="{{ base_path }}/{{ resource.id }}/rows"
                        hx-target="#table-body" hx-swap="innerHTML"
                        hx-trigger="wa-change"
                        hx-include="closest form">
@@ -38,7 +38,7 @@
             </wa-select>
             {% else %}
             <wa-input type="text" name="{{ field.name }}" placeholder="{{ field.label }}" size="small"
-                      hx-get="{{ base_path }}/{{ resource.name }}/rows"
+                      hx-get="{{ base_path }}/{{ resource.id }}/rows"
                       hx-target="#table-body" hx-swap="innerHTML"
                       hx-trigger="input changed delay:300ms"
                       hx-include="closest form"></wa-input>
@@ -54,7 +54,7 @@
                 {% for col in resource.columns %}
                 {% if col.column and not col.hidden %}
                 <th>
-                    <a hx-get="{{ base_path }}/{{ resource.name }}/rows?sort={{ col.name }}" hx-target="#table-body" hx-swap="innerHTML">
+                    <a hx-get="{{ base_path }}/{{ resource.id }}/rows?sort={{ col.name }}" hx-target="#table-body" hx-swap="innerHTML">
                         {{ col.label }}
                     </a>
                 </th>
@@ -66,7 +66,7 @@
             </tr>
         </thead>
         <tbody id="table-body"
-               hx-get="{{ base_path }}/{{ resource.name }}/rows"
+               hx-get="{{ base_path }}/{{ resource.id }}/rows"
                hx-trigger="load"
                hx-swap="innerHTML">
             <tr><td colspan="100" class="empty-state">Loading...</td></tr>

@@ -301,9 +301,9 @@
                 {% for name in resource_names %}
                 <li>
                     <a href="{{ base_path }}/{{ name }}/"
-                       {% if resource is defined and resource.name == name %}class="active"{% endif %}>
-                        {% if resource is defined and resource.name == name %}{% else %}<span style="width:11px;display:inline-block;"></span>{% endif %}
-                        {{ name | replace("_", " ") | title }}
+                       {% if resource is defined and resource.id == name %}class="active"{% endif %}>
+                        {% if resource is defined and resource.id == name %}{% else %}<span style="width:11px;display:inline-block;"></span>{% endif %}
+                        {{ site.resources[name].label }}
                     </a>
                 </li>
                 {% endfor %}

@@ -376,7 +376,7 @@ def _register_options_endpoints(router: APIRouter, resource: Resource, site, ren
 
 
 def build_resource_router(resource: Resource, render, site=None) -> APIRouter:
-    router = APIRouter(prefix=f"/{resource.name}", tags=[resource.name])
+    router = APIRouter(prefix=f"/{resource.id}", tags=[resource.id])
 
     id_param = resource.id_param_name
 
@@ -524,11 +524,11 @@ def build_resource_router(resource: Resource, render, site=None) -> APIRouter:
                 item_id_val = getattr(result, "id", None) or (result.get("id") if isinstance(result, dict) else None)
                 if item_id_val is not None:
                     return RedirectResponse(
-                        url=f"{request.scope.get('root_path', '')}/{_res.name}/{item_id_val}",
+                        url=f"{request.scope.get('root_path', '')}/{_res.id}/{item_id_val}",
                         status_code=303,
                     )
             return RedirectResponse(
-                url=f"{request.scope.get('root_path', '')}/{_res.name}/",
+                url=f"{request.scope.get('root_path', '')}/{_res.id}/",
                 status_code=303,
             )
 
@@ -642,7 +642,7 @@ def build_resource_router(resource: Resource, render, site=None) -> APIRouter:
             _res.update_fn(**fn_kwargs)
 
             return RedirectResponse(
-                url=f"{request.scope.get('root_path', '')}/{_res.name}/{id}",
+                url=f"{request.scope.get('root_path', '')}/{_res.id}/{id}",
                 status_code=303,
             )
 
@@ -658,7 +658,7 @@ def build_resource_router(resource: Resource, render, site=None) -> APIRouter:
             fn_kwargs = {dp.name: kwargs[dp.name] for dp in _deps if dp.name in kwargs}
             fn_kwargs[_id_p or "id"] = coerced_id
             _res.delete_fn(**fn_kwargs)
-            return HTMLResponse(content="", headers={"HX-Redirect": f"{request.scope.get('root_path', '')}/{_res.name}/"})
+            return HTMLResponse(content="", headers={"HX-Redirect": f"{request.scope.get('root_path', '')}/{_res.id}/"})
 
         _inject_depends(delete_item, delete_deps)
         router.add_api_route("/{id}", delete_item, methods=["DELETE"])

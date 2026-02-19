@@ -35,7 +35,7 @@
         <wa-input slot="start" size="small" placeholder="Type to filter..." with-clear
                   style="margin: 4px 8px; width: calc(100% - 16px);"
                   name="q"
-                  hx-get="{{ base_path }}/{{ resource.name }}/options/{{ field.name }}"
+                  hx-get="{{ base_path }}/{{ resource.id }}/options/{{ field.name }}"
                   hx-trigger="input changed delay:300ms, load"
                   hx-target="#{{ select_id }}-opts"
                   hx-swap="innerHTML"

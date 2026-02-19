@@ -3,22 +3,22 @@
 <div class="fade-in">
     <wa-breadcrumb>
         {% if resource.list_fn %}
-        <wa-breadcrumb-item href="{{ base_path }}/{{ resource.name }}/">{{ resource.name | replace("_", " ") | title }}</wa-breadcrumb-item>
+        <wa-breadcrumb-item href="{{ base_path }}/{{ resource.id }}/">{{ resource.label }}</wa-breadcrumb-item>
         {% endif %}
         <wa-breadcrumb-item>{{ display_name or id }}</wa-breadcrumb-item>
     </wa-breadcrumb>
 
     <div class="page-header">
-        <h1>{{ display_name or (resource.name | replace("_", " ") | title ~ " #" ~ id) }}</h1>
+        <h1>{{ display_name or (resource.label ~ " #" ~ id) }}</h1>
         <div class="actions">
             {% if resource.update_fn %}
-            <wa-button variant="brand" href="{{ base_path }}/{{ resource.name }}/{{ id }}/edit">
+            <wa-button variant="brand" href="{{ base_path }}/{{ resource.id }}/{{ id }}/edit">
                 <wa-icon slot="start" name="pen"></wa-icon>
                 Edit
             </wa-button>
             {% endif %}
             {% if resource.list_fn %}
-            <wa-button appearance="outlined" href="{{ base_path }}/{{ resource.name }}/">
+            <wa-button appearance="outlined" href="{{ base_path }}/{{ resource.id }}/">
                 <wa-icon slot="start" name="arrow-left"></wa-icon>
                 Back to list
             </wa-button>

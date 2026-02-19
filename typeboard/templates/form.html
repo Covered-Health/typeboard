@@ -3,13 +3,13 @@
 <div class="fade-in">
     <wa-breadcrumb>
         {% if resource.list_fn %}
-        <wa-breadcrumb-item href="{{ base_path }}/{{ resource.name }}/">{{ resource.name | replace("_", " ") | title }}</wa-breadcrumb-item>
+        <wa-breadcrumb-item href="{{ base_path }}/{{ resource.id }}/">{{ resource.label }}</wa-breadcrumb-item>
         {% endif %}
         <wa-breadcrumb-item>{% if mode == "create" %}New{% else %}Edit {{ display_name or id }}{% endif %}</wa-breadcrumb-item>
     </wa-breadcrumb>
 
     <div class="page-header">
-        <h1>{% if mode == "create" %}New {{ resource.name | replace("_", " ") | title }}{% else %}Edit {{ display_name or (resource.name | replace("_", " ") | title ~ " #" ~ id) }}{% endif %}</h1>
+        <h1>{% if mode == "create" %}New {{ resource.label }}{% else %}Edit {{ display_name or (resource.label ~ " #" ~ id) }}{% endif %}</h1>
     </div>
 
     {% if errors %}
@@ -35,7 +35,7 @@
                         {% if mode == "create" %}Create{% else %}Save changes{% endif %}
                     </wa-button>
                     {% if resource.list_fn %}
-                    <wa-button appearance="outlined" href="{{ base_path }}/{{ resource.name }}/">Cancel</wa-button>
+                    <wa-button appearance="outlined" href="{{ base_path }}/{{ resource.id }}/">Cancel</wa-button>
                     {% endif %}
                 </div>
             </form>

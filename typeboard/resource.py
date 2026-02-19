@@ -13,12 +13,17 @@ from typeboard.introspection import (
 
 @dataclass
 class Resource:
-    name: str
+    id: str
+    label: str = ""
     list_fn: Callable | None = None
     get_fn: Callable | None = None
     create_fn: Callable | None = None
     update_fn: Callable | None = None
     delete_fn: Callable | None = None
+
+    def __post_init__(self):
+        if not self.label:
+            self.label = self.id.replace("_", " ").title()
 
     # Cached introspection results (populated lazily)
     _columns: list[FieldInfo] | None = field(default=None, repr=False)
