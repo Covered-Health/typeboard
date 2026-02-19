@@ -20,6 +20,15 @@ class AdminSite:
         self.auth_dependency = auth_dependency
         self.theme = theme or LIGHT
         self.resources: dict[str, Resource] = {}
+        # Ordered list of (section_name | None, [resource_name, ...])
+        self._sections: list[tuple[str | None, list[str]]] = []
+        self._current_section: str | None = None
+
+    def section(self, name: str) -> None:
+        """Start a new sidebar section. Resources registered after this call
+        are placed under this section heading until the next section() call."""
+        self._current_section = name
+        self._sections.append((name, []))
 
     def resource(
         self,
@@ -40,7 +49,16 @@ class AdminSite:
             delete_fn=delete,
         )
         self.resources[name] = res
+        # Place in the current section (or a default sectionless group)
+        if not self._sections or self._sections[-1][0] != self._current_section:
+            self._sections.append((self._current_section, []))
+        self._sections[-1][1].append(name)
         return res
+
+    @property
+    def sidebar_sections(self) -> list[tuple[str | None, list[str]]]:
+        """Sections with their resource names, in registration order."""
+        return self._sections
 
     def as_asgi(self):
         from typeboard.routing import build_app

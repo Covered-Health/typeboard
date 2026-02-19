@@ -68,6 +68,15 @@
         .sidebar-nav { padding: 12px 8px; flex: 1; }
         .sidebar-nav ul { list-style: none; }
         .sidebar-nav li { margin-bottom: 2px; }
+        .sidebar-section-label {
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--wa-color-neutral-50);
+            padding: 16px 12px 4px;
+        }
+        .sidebar-section-label:first-child { padding-top: 4px; }
         .sidebar-nav a {
             display: flex;
             align-items: center;
@@ -284,8 +293,12 @@
         </div>
         <wa-divider></wa-divider>
         <div class="sidebar-nav">
+            {% for section_name, resource_names in site.sidebar_sections %}
+            {% if section_name %}
+            <div class="sidebar-section-label">{{ section_name }}</div>
+            {% endif %}
             <ul>
-                {% for name, res in site.resources.items() %}
+                {% for name in resource_names %}
                 <li>
                     <a href="{{ base_path }}/{{ name }}/"
                        {% if resource is defined and resource.name == name %}class="active"{% endif %}>
@@ -295,6 +308,7 @@
                 </li>
                 {% endfor %}
             </ul>
+            {% endfor %}
         </div>
     </nav>
     <main>
