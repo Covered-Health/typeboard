@@ -11,48 +11,48 @@
     {% endif %}
     {% endfor %}
     {% if resource.delete_fn %}
-    <td style="text-align:right;" onclick="event.stopPropagation()">
-        <wa-button size="small" variant="danger" appearance="outlined"
+    <td class="text-end" onclick="event.stopPropagation()">
+        <button class="btn btn-outline-danger btn-sm"
                 hx-delete="{{ base_path }}/{{ resource.id }}/{{ item_id(item, resource.id_param_name) }}"
                 hx-confirm="Are you sure you want to delete this record?"
                 hx-target="closest tr"
                 hx-swap="outerHTML">
-            <wa-icon slot="start" name="trash"></wa-icon>
+            <i class="fa-solid fa-trash me-1"></i>
             Delete
-        </wa-button>
+        </button>
     </td>
     {% endif %}
 </tr>
 {% endfor %}
 {% else %}
-<tr><td colspan="100" class="empty-state">No records found.</td></tr>
+<tr><td colspan="100" class="text-center text-body-secondary p-5">No records found.</td></tr>
 {% endif %}
 
 {% if page_info and page_info.total_pages > 1 %}
 <tr>
     <td colspan="100">
-        <div class="pagination">
+        <div class="d-flex justify-content-between align-items-center pt-3">
             <div>
                 {% if page_info.has_prev %}
-                <wa-button size="small" appearance="outlined"
+                <button class="btn btn-outline-secondary btn-sm"
                    hx-get="{{ base_path }}/{{ resource.id }}/rows?page={{ page_info.page - 1 }}"
                    hx-target="#table-body"
                    hx-swap="innerHTML">
-                    <wa-icon slot="start" name="chevron-left"></wa-icon>
+                    <i class="fa-solid fa-chevron-left me-1"></i>
                     Previous
-                </wa-button>
+                </button>
                 {% endif %}
             </div>
-            <span>Page {{ page_info.page }} of {{ page_info.total_pages }} &middot; {{ page_info.total }} records</span>
+            <span class="text-body-secondary small">Page {{ page_info.page }} of {{ page_info.total_pages }} &middot; {{ page_info.total }} records</span>
             <div>
                 {% if page_info.has_next %}
-                <wa-button size="small" appearance="outlined"
+                <button class="btn btn-outline-secondary btn-sm"
                    hx-get="{{ base_path }}/{{ resource.id }}/rows?page={{ page_info.page + 1 }}"
                    hx-target="#table-body"
                    hx-swap="innerHTML">
                     Next
-                    <wa-icon slot="end" name="chevron-right"></wa-icon>
-                </wa-button>
+                    <i class="fa-solid fa-chevron-right ms-1"></i>
+                </button>
                 {% endif %}
             </div>
         </div>
